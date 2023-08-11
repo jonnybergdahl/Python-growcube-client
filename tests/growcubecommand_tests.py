@@ -13,6 +13,8 @@ from growcube_client import SyncWaterLevelCommand
 from growcube_client import SyncWaterTimeCommand
 from growcube_client import SyncDeviceUpgradeCommand
 from growcube_client import SyncWFactoryResetCommand
+
+
 class GrowCubeCommandTestCase(unittest.TestCase):
     def test_command_base(self):
         command = GrowcubeCommand(GrowcubeCommand.CMD_SYNC_TIME, "payload")

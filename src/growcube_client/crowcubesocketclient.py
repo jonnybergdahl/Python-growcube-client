@@ -61,10 +61,14 @@ class GrowcubeSocketClient:
         #print(f"Current data: {self.data}")
         while True:
             # read from the socket
-            data = self.sock.recv(1024)
+            try:
+                data = self.sock.recv(32)
+            except socket.timeout:
+                #print("Timeout!")
+                return None
             if not data:
                 # no more data, return the message so far
-                print("no more data")
+                #print("no more data")
                 return None
             # Remove all b'\x00' characters, seems to be used for padding?
             data = bytearray(filter(lambda c: c != 0, data))
@@ -75,10 +79,10 @@ class GrowcubeSocketClient:
             self.data = self.data[new_index:]
 
             if message is None:
-                print(f"Not complete data {self.data}")
+                #print(f"Not complete data {self.data}")
                 return None
 
-            #print("Complete message found")
+            print(f"message: {message.command} - {message.payload}")
             # we have a complete message, remove consumed data
             return message
 

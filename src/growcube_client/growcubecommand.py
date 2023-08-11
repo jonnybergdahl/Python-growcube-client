@@ -24,7 +24,7 @@ class GrowcubeCommand:
         if self.message is not None:
             return f"elea{self.command}#{len(self.message)}#{self.message}#"
         else:
-            return f"{self.command}#"
+            return self.command
 
 
 # Command 43 - SetWorkMode
@@ -54,7 +54,7 @@ class ClosePumpCommand(GrowcubeCommand):
 # Command 47 - Water
 class WaterCommand(GrowcubeCommand):
     def __init__(self, pump: int, state: int):
-        super().__init__(GrowcubeCommand.CMD_REQ_WATER, f"{pump}#{state}")
+        super().__init__(GrowcubeCommand.CMD_REQ_WATER, f"{pump}@{state}")
 
 
 # Command 48 - Request curve data

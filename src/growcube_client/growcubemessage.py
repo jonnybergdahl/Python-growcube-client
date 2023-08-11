@@ -23,7 +23,7 @@ class GrowcubeMessage:
 
         start_index = message_str.find(GrowcubeMessage.HEADER)
         if start_index == -1:
-            print("Header not found, exiting")
+            #print("Header not found, exiting")
             return 0, None
 
         # Move to start of message
@@ -33,7 +33,7 @@ class GrowcubeMessage:
         parts = message_str[len(GrowcubeMessage.HEADER):].split(GrowcubeMessage.DELIMITER)
         if len(parts) < 3:
             # Still don't have the complete message
-            print(f"Got parts: {parts}")
+            #print(f"Got parts: {parts}")
             return start_index, None
 
         try:
