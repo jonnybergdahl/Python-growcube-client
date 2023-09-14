@@ -1,5 +1,7 @@
+from typing_extensions import Self
 """
-Growcube client
+Growcube client library
+https://github.com/jonnybergdahl/Python-growcube-client
 
 Author: Jonny Bergdahl
 Date: 2023-09-05
@@ -8,41 +10,64 @@ Date: 2023-09-05
 
 class GrowcubeMessage:
     """
-    Static methods to handle the raw Growcube protocol socket messages.
+    Growcube protocol message base class
     """
     HEADER = 'elea'
     DELIMITER = '#'
     END_DELIMITER = '#'
     EMPTY_MESSAGE = HEADER + "00" + DELIMITER + DELIMITER + DELIMITER
 
-    def __init__(self, command, payload, data):
+    def __init__(self, command:int, payload:str, data:bytes):
+        """
+        GrowcubeMessage constructor
+        Args:
+            command: Command value
+            payload: Message payload
+            data: The complete message as bytes
+        """
         self._command = command
         self._payload = payload
         self._data = data
 
     @property
     def command(self):
-        """Command"""
+        """
+        Command value
+        Returns:
+            Command value
+        """
         return self._command
 
     @property
     def payload(self):
-        """Payload"""
+        """
+        Message payload
+        Returns:
+            Message payload
+        """
         return self._payload
 
     @property
     def data(self) -> bytes:
-        """The complete message as bytes"""
+        """
+        The complete message as bytes
+        Returns:
+            The complete message as bytes
+        """
         return self._data
 
     @staticmethod
-    def from_bytes(data: bytearray):
+    def from_bytes(data: bytearray) -> (int, Self):
         """
         Tries to construct a complete GrowcubeMessage from the data, and returns
-        the index of the next non consumed data in the buffer, together with an the message
+        the index of the next non consumed data in the buffer, together with the message
         Converts a byte array to a GrowcubeMessage instance
-        @param data: The current bytearray value
-        @return: index of any consumed bytes, and a GrowcubeMessage if found, else None
+        Args:
+            data: the current data buffer
+
+        Returns:
+            The index of the next non consumed data in the buffer, together with the message,
+            or the next found start index and None if the message is incomplete
         """
         message_str = data.decode('ascii')
 
@@ -86,9 +111,12 @@ class GrowcubeMessage:
     def to_bytes(command: int, data: str) -> bytes:
         """
         Creates a bytearray representation of a message as used in the protocol
-        @param command: Int value of command
-        @param data: Data to encode in command
-        @return:
+        Args:
+            command: Command value
+            data: Data to send
+
+        Returns:
+            A bytearray representation of a message as used in the protocol
         """
         result = f"{GrowcubeMessage.HEADER}{command:02d}{GrowcubeMessage.DELIMITER}{len(data)}" + \
                  f"{GrowcubeMessage.DELIMITER}{data}{GrowcubeMessage.DELIMITER}"

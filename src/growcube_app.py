@@ -78,23 +78,23 @@ class DetailForm(npyscreen.ActionFormMinimal):
     def update_data(self, data):
         logging.info(f"Got message {data.get_description()}")
         if isinstance(data, MoistureHumidityStateGrowcubeReport):
-            if data.pump == 0:
-                self.humidity_widget.value = f"{data.humidity}%"
-                self.temperature_widget.value = f"{data.temperature}°C"
-                self.moistureA_widget.value = f"{data.moisture}%"
-            elif data.pump == 1:
-                self.moistureB_widget.value = f"{data.moisture}%"
-            elif data.pump == 2:
-                self.moistureC_widget.value = f"{data.moisture}%"
-            elif data.pump == 3:
-                self.moistureD_widget.value = f"{data.moisture}%"
+            if data._pump == 0:
+                self.humidity_widget.value = f"{data._humidity}%"
+                self.temperature_widget.value = f"{data._temperature}°C"
+                self.moistureA_widget.value = f"{data._moisture}%"
+            elif data._pump == 1:
+                self.moistureB_widget.value = f"{data._moisture}%"
+            elif data._pump == 2:
+                self.moistureC_widget.value = f"{data._moisture}%"
+            elif data._pump == 3:
+                self.moistureD_widget.value = f"{data._moisture}%"
         elif isinstance(data, DeviceVersionGrowcubeReport):
-            self.version_widget.value = data.version
-            self.device_id_widget.value = data.device_id
+            self.version_widget.value = data._version
+            self.device_id_widget.value = data._device_id
         elif isinstance(data, LockStateGrowcubeReport):
-            self.lock_state_widget.value = 'OK' if not data.lock_state else 'Locked'
+            self.lock_state_widget.value = 'OK' if not data._lock_state else 'Locked'
         elif isinstance(data, CheckSensorGrowcubeReport):
-            self.sensor_state_widget.value = 'OK' if not data.fault_state else 'Check sensors'
+            self.sensor_state_widget.value = 'OK' if not data._fault_state else 'Check sensors'
         elif isinstance(data, WaterStateGrowcubeReport):
             self.water_state_widget.value = 'OK' if not data.water_warning else 'Water warning'
         self.display()

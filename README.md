@@ -8,51 +8,81 @@ Python library for communication with Growcube devices.
 pip install growcube-client
 ```
 
-## Get started
+## Getting started
 
-Simple use, connect to device, get all data and exit.
-```python
-from growcube_client import GrowcubeClient
+The `growcube.sample.py` file shows how to use the library. It defines a callback function where the GrowcubeClient
+sends messages as they arrive from the Growcube device. To use the sample, change the `HOST` variable to the host
+name or IP address of the Growcube device. Then run the sample with:
 
-HOST = "172.30.2.70"
-
-print(f"Connecting to Growcube at {HOST}")
-client = GrowcubeClient(HOST)
-client.connect()
-print(f"Getting data...")
-data = client.get_all_data()
-if data:
-    client.dump()
-
+```bash
+python3 growcube_sample.py
 ```
 
-continuous use, connect to device and dump all received data.
+Source code:
 
 ```python
-from growcube_client import GrowcubeClient
+import asyncio
+from growcube_client import GrowcubeClient, GrowcubeReport
 
-HOST = "172.30.2.71"
-PORT = 8800
 
-print(f"Connecting to Growcube at {HOST}")
-client = GrowcubeClient(HOST, PORT)
-client.connect()
+# Define a callback function to print messages to the screen
+def callback(report: GrowcubeReport) -> None:
+    # Just dump the message to the console
+    print(f"Received: {report.get_description()}")
 
-while True:
-    message = client.get_next_report()
-    if message is not None:
-        message.dump()
 
+async def main(host: str) -> None:
+    # Create a client instance
+    client = GrowcubeClient(host, callback)
+    print(f"Connecting to Growcube at {HOST}")
+
+    # Connect to the Growcube and start listening for messages
+    await client.connect_and_listen()
+    # The above call never finishes, so we will not reach here
+    # In a real application this could be run in a background thread
+
+
+if __name__ == "__main__":
+    # Set host name or IP address
+    HOST = "172.30.2.70"
+
+    asyncio.run(main(HOST))
 ```
 
-Sample output
+Sample script output.
+
+```log
+Connecting to Growcube at 172.30.2.70
+Received: RepDeviceVersionCmd: version 3.6, device_id 12663500
+Received: RepLockstateCmd: lock_state False
+Received: RepWaterStateCmd: water_warning: True
+Received: RepSTHSateCmd: pump: 0, moisture: 26, humidity: 41, temperature: 24
+Received: RepSTHSateCmd: pump: 1, moisture: 26, humidity: 41, temperature: 24
+Received: RepSTHSateCmd: pump: 2, moisture: 30, humidity: 41, temperature: 24
+Received: RepSTHSateCmd: pump: 3, moisture: 33, humidity: 41, temperature: 24
 ```
-Connecting to Growcube at 172.30.2.71
-RepVersionAndWater: version 3.6
-Unknown report: 33: data 0, @, 0
-RepWaterState: water_warning: False
-RepSTHSate: pump: 0, moisture: 18, humidity: 39, temperature: 22
-RepSTHSate: pump: 1, moisture: 22, humidity: 39, temperature: 22
-RepSTHSate: pump: 2, moisture: 31, humidity: 39, temperature: 22
-RepSTHSate: pump: 3, moisture: 24, humidity: 39, temperature: 22
+
+## More advanced use
+
+The `growcube_app.py` file shows how to use the library in a more advanced application. 
+To use the app, you need to install `npyscreen`first.
+
+```bash
+pip3 install npyscreen
 ```
+
+Start the app with:
+```bash
+python3 growcube_app.py
+```
+
+You are greeted with a screen asking for the host name or IP address of the Growcube device. 
+Enter that and press Tab to move to the OK button. Press Enter to move to the next screen.
+
+![Growcube app page 1](assets/app1.png)
+
+The app will now connect to the Growcube and start listening for messages. The data will be populated as it arrives.
+
+![Growcube app page 2](assets/app2.png)
+
+Press Tab to move to the OK button. Press Enter to exit the app.

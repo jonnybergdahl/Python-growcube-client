@@ -1,22 +1,29 @@
+import asyncio
+import logging
+from typing import Callable
+from growcube_client.growcubemessage import GrowcubeMessage
+from growcube_client.growcubereport import GrowcubeReport
+from growcube_client.growcubecommand import GrowcubeCommand, WaterCommand
 """
-Growcube client
+Growcube client library
+https://github.com/jonnybergdahl/Python-growcube-client
 
 Author: Jonny Bergdahl
 Date: 2023-09-05
 """
-import asyncio
-import logging
-from growcube_client.growcubemessage import GrowcubeMessage
-from growcube_client.growcubereport import GrowcubeReportBase
-from growcube_client.growcubecommand import GrowcubeCommand, WaterCommand
-
 
 class GrowcubeClient:
-    def __init__(self, host: str, callback, log_level=logging.INFO):
+    """
+    Growcube client class
+    """
+    def __init__(self, host: str, callback: Callable[[GrowcubeReport], None],
+                 log_level: int = logging.INFO) -> None:
         """
-        Growcube client
-        @param host: IP or DNS address of the Growcube
-        @param callback: A callback method accepting a GrowcubeReport instance
+        GrowcubeClient constructor
+        Args:
+            host: name or IP address of the Growcube device
+            callback: callback function to receive data from the Growcube
+            log_level: logging level
         """
         self.host = host
         self.port = 8800
@@ -27,29 +34,63 @@ class GrowcubeClient:
         self.reader = None
         self.writer = None
         self.connected = False
+        self.connection_timeout = 10
 
-    def log_debug(self, message, *args):
+    def log_debug(self, message: str, *args) -> None:
+        """
+        Log a debug message
+
+        Args:
+            message: Message to log
+            *args: Arguments for the message
+
+        Returns:
+            None
+
+        """
         if self.log_level <= logging.DEBUG:
             logging.debug(message, *args)
 
-    def log_info(self, message, *args):
+    def log_info(self, message: str, *args) -> None:
+        """
+        Log an info message
+
+        Args:
+            message: Message to log
+            *args: Arguments for the message
+
+        Returns:
+            None
+        """
         if self.log_level <= logging.INFO:
             logging.info(message, *args)
 
-    def log_error(self, message, *args):
+    def log_error(self, message:str, *args) -> None:
+        """
+        Log an error message
+        Args:
+            message: Message to log
+            *args: Arguments for the message
+
+        Returns:
+            None
+        """
         if self.log_level <= logging.ERROR:
             logging.error(message, *args)
 
-    async def connect_and_listen(self):
+    async def connect_and_listen(self) -> None:
         """
-        Connects to the Growcube and continually listens for messages.
-        Reports any received messages using the callback
+        Connect to the Growcube and start listening for data. This function will not return until the connection is
+        closed.
+        Returns:
+            None
         """
         while not self._exit:
             try:
                 if not self.connected:
                     self.log_info("Connecting to %s:%i", self.host, self.port)
-                    self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
+                    self.reader, self.writer = await asyncio.wait_for(asyncio.open_connection(self.host, self.port),
+                                                                      timeout=self.connection_timeout)
                     self.log_info("Connected to %s:%i", self.host, self.port)
                     self.connected = True
 
@@ -67,31 +108,50 @@ class GrowcubeClient:
                 self._data = self._data[new_index:]
 
                 if message is not None:
-                    self.log_debug(f"message: {message.command} - {message.payload}")
+                    self.log_debug(f"message: {message._command} - {message.payload}")
                     if self.callback is not None:
-                        report = GrowcubeReportBase.get_report(message)
+                        report = GrowcubeReport.get_report(message)
                         self.callback(report)
 
             except ConnectionRefusedError:
                 self.log_error(f"Connection to {self.host} refused")
                 self.connected = False
-                await asyncio.sleep(1)
+                self._exit = True
             except asyncio.CancelledError:
                 self.log_info("Client was cancelled. Exiting...")
                 self.connected = False
+                self._exit = True
             except asyncio.IncompleteReadError:
                 self.log_info("Connection closed by server")
+            except asyncio.TimeoutError:
+                self.log_error(f"Connection to {self.host} timed out")
+                self.connected = False
+                self._exit = True
             except Exception as e:
                 self.log_error(f"Error {str(e)}")
                 self.connected = False
+                self._exit = True
+        self.log_debug("Exiting connect_and_listen loop")
 
-        print("Exiting listen loop")
-
-    def disconnect(self):
+    def disconnect(self) -> None:
+        """
+        Disconnect from the Growcube
+        Returns:
+            None
+        """
         self.log_info("Disconnecting")
         self._exit = True
 
-    async def send_command(self, command: GrowcubeCommand):
+    async def send_command(self, command: GrowcubeCommand) -> bool:
+        """
+        Send a command to the Growcube. C
+
+        Args:
+            command: A GrowcubeCommand object
+
+        Returns:
+            A boolean indicating if the command was sent successfully
+        """
         try:
             self.log_info("Sending message %s", command.get_description())
             message_bytes = command.get_message().encode('ascii')
@@ -105,8 +165,19 @@ class GrowcubeClient:
             return False
         return True
 
-    async def water_plant(self, pump: int, duration: int):
-        await self.send_command(WaterCommand(pump, True))
-        await asyncio.sleep(duration)
-        await self.send_command(WaterCommand(pump, False))
+    async def water_plant(self, pump: int, duration: int) -> bool:
+        """
+        Water a plant for a given duration. This function will block until the watering is complete.
 
+        Args:
+            pump: Pump number 0-3
+            duration: Duration in seconds
+
+        Returns:
+            A boolean indicating if the watering was successful
+        """
+        success = await self.send_command(WaterCommand(pump, True))
+        if success:
+            await asyncio.sleep(duration)
+            success = await self.send_command(WaterCommand(pump, False))
+        return success
