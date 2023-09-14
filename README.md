@@ -10,7 +10,7 @@ pip install growcube-client
 
 ## Getting started
 
-The `growcube.sample.py` file shows how to use the library. It defines a callback function where the GrowcubeClient
+The `src/rowcube.sample.py` file shows how to use the library. It defines a callback function where the GrowcubeClient
 sends messages as they arrive from the Growcube device. To use the sample, change the `HOST` variable to the host
 name or IP address of the Growcube device. Then run the sample with:
 
@@ -64,7 +64,7 @@ Received: RepSTHSateCmd: pump: 3, moisture: 33, humidity: 41, temperature: 24
 
 ## More advanced use
 
-The `growcube_app.py` file shows how to use the library in a more advanced application. 
+The `src/growcube_app.py` file shows how to use the library in a more advanced application. 
 To use the app, you need to install `npyscreen`first.
 
 ```bash
