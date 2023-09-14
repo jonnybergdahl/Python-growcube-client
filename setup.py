@@ -19,7 +19,7 @@ setup(
     long_description_content_type="text/markdown",    
     author='Jonny Bergdahl',
     license='MIT',
-    packages=find_packages(include=["growcube_client"],where='src'),
+    packages=find_packages(include=["growcube_client"], where='src'),
     package_dir={"": "src"},
     setup_requires=['pytest-runner'],
     tests_require=['pytest==4.4.1'],

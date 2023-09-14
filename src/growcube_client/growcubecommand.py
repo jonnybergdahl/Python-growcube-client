@@ -1,7 +1,28 @@
+"""
+Growcube client
+
+Author: Jonny Bergdahl
+Date: 2023-09-05
+"""
 import datetime
 
 
 class GrowcubeCommand:
+    Request = {
+        "43": "SetWorkModeCmd",
+        "44": "SyncTimeCmd",
+        "45": "PlantEndCmd",
+        "46": "ClosePumpCmd",
+        "47": "ReqWaterCmd",
+        "48": "ReqCurveDataCmd",
+        "49": "WaterModeCmd",
+        "50": "WifiSettingsCmd",
+        "ele502": "SyncWaterLevelCmd",
+        "ele503": "SyncWaterTimeCmd",
+        "ele504": "DeviceUpgradeCmd",
+        "ele505": "FactoryResetCmd"
+    }
+
     CHD_HEAD = "elea"
     CMD_SET_WORK_MODE = "43"
     CMD_SYNC_TIME = "44"
@@ -26,12 +47,26 @@ class GrowcubeCommand:
         else:
             return self.command
 
+    def get_description(self):
+        if self.command in self.Request:
+            return self.Request[self.command]
+        else:
+            return f"Unknown: {self.command}"
+
 
 # Command 43 - SetWorkMode
 class SetWorkModeCommand(GrowcubeCommand):
     def __init__(self, mode: int):
         super().__init__(self.CMD_SET_WORK_MODE, str(mode))
+        self.mode = mode
 
+    def get_description(self):
+        if self.mode == 0:
+            return "Auto"
+        elif self.mode == 1:
+            return "Manual"
+        else:
+            return f"Unknown: {self.mode}"
 
 # Command 44 - Sync time
 class SyncTimeCommand(GrowcubeCommand):
@@ -53,9 +88,13 @@ class ClosePumpCommand(GrowcubeCommand):
 
 # Command 47 - Water
 class WaterCommand(GrowcubeCommand):
-    def __init__(self, pump: int, state: int):
-        super().__init__(GrowcubeCommand.CMD_REQ_WATER, f"{pump}@{state}")
+    def __init__(self, pump: int, state: bool):
+        super().__init__(GrowcubeCommand.CMD_REQ_WATER, f"{pump}@{1 if state else 0}")
+        self.pump = pump
+        self.state = state
 
+    def get_description(self):
+        return f"{self.Request[self.command]}: pump {self.pump}, state {self.state}"
 
 # Command 48 - Request curve data
 class RequestCurveDataCommand(GrowcubeCommand):

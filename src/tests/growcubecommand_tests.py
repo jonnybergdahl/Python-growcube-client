@@ -52,8 +52,8 @@ class GrowCubeCommandTestCase(unittest.TestCase):
     def test_water_command(self):
         command = WaterCommand(1, 0)
         self.assertEqual(GrowcubeCommand.CMD_REQ_WATER, command.command)
-        self.assertEqual("1#0", command.message)
-        self.assertEqual("elea47#3#1#0#", command.get_message())
+        self.assertEqual("1@0", command.message)
+        self.assertEqual("elea47#3#1@0#", command.get_message())
 
     def test_request_curve_data_command(self):
         command = RequestCurveDataCommand(0)
@@ -75,19 +75,20 @@ class GrowCubeCommandTestCase(unittest.TestCase):
 
     def test_sync_water_level_command(self):
         command = SyncWaterLevelCommand()
-        self.assertEqual("ele502#", command.get_message())
+        self.assertEqual("ele502", command.get_message())
 
     def test_sync_water_time_command(self):
         command = SyncWaterTimeCommand()
-        self.assertEqual("ele503#", command.get_message())
+        self.assertEqual("ele503", command.get_message())
 
     def test_sync_device_upgrade_command(self):
         command = SyncDeviceUpgradeCommand()
-        self.assertEqual("ele504#", command.get_message())
+        self.assertEqual("ele504", command.get_message())
 
     def test_sync_w_factory_reset(self):
         command = SyncWFactoryResetCommand()
-        self.assertEqual("ele505#", command.get_message())
+        self.assertEqual("ele505", command.get_message())
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -38,12 +38,15 @@ class GrowCubeMessageTestCase(unittest.TestCase):
         data = b'elea28#1#0#'
         new_index, message = GrowcubeMessage.from_bytes(data)
         self.assertEqual(11, new_index)
+        self.assertEqual(28, message.command)
         self.assertEqual("0", message.payload)
+        self.assertEqual(data, message._data)
 
     def test_complete_message_with_crap_at_end(self):
         data = b'elea24#12#3.6@12663500#abcdef'
         new_index, message = GrowcubeMessage.from_bytes(data)
         self.assertEqual(23, new_index)
+        self.assertEqual(24, message.command)
         self.assertEqual("3.6@12663500", message.payload)
         self.assertEqual(data[new_index:], b"abcdef")
 
@@ -52,6 +55,7 @@ class GrowCubeMessageTestCase(unittest.TestCase):
         new_index, message = GrowcubeMessage.from_bytes(data)
         self.assertEqual(27, new_index)
         self.assertEqual("3.6@12663500", message.payload)
+        self.assertEqual(24, message.command)
         self.assertEqual(data[new_index:], b"")
 
     def test_incomplete_with_crap_at_start(self):
