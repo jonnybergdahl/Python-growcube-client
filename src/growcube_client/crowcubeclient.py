@@ -165,19 +165,19 @@ class GrowcubeClient:
             return False
         return True
 
-    async def water_plant(self, pump: int, duration: int) -> bool:
+    async def water_plant(self, channel: int, duration: int) -> bool:
         """
         Water a plant for a given duration. This function will block until the watering is complete.
 
         Args:
-            pump: Pump number 0-3
+            channel: Channel number 0-3
             duration: Duration in seconds
 
         Returns:
             A boolean indicating if the watering was successful
         """
-        success = await self.send_command(WaterCommand(pump, True))
+        success = await self.send_command(WaterCommand(channel, True))
         if success:
             await asyncio.sleep(duration)
-            success = await self.send_command(WaterCommand(pump, False))
+            success = await self.send_command(WaterCommand(channel, False))
         return success

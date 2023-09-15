@@ -144,7 +144,7 @@ class WaterStateGrowcubeReport(GrowcubeReport):
 class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
     """
     Response 21 - RepSTHSate
-    Report moisture, humidity and temperature for a pump
+    Report moisture, humidity and temperature for a channel
     """
     def __init__(self, data):
         """
@@ -154,19 +154,19 @@ class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
         """
         GrowcubeReport.__init__(self, 21)
         values = data.split(self.CMD_INNER)
-        self._pump = int(values[0])
+        self._channel = int(values[0])
         self._moisture = int(values[1])
         self._humidity = int(values[2])
         self._temperature = int(values[3])
 
     @property
-    def pump(self):
+    def channel(self):
         """
-        Pump number 0-3
+        Channel number 0-3
         Returns:
-            Pump number 0-3
+            Channel number 0-3
         """
-        return self._pump
+        return self._channel
 
     @property
     def moisture(self):
@@ -201,7 +201,7 @@ class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
         Returns:
             A human readable description of the report
         """
-        return f"{self._command}: pump: {self._pump}, moisture: {self._moisture}, humidity: {self._humidity}, temperature: {self._temperature}"
+        return f"{self._command}: channel: {self._channel}, moisture: {self._moisture}, humidity: {self._humidity}, temperature: {self._temperature}"
 
 
 class AutoWaterGrowcubeReport(GrowcubeReport):
@@ -217,7 +217,7 @@ class AutoWaterGrowcubeReport(GrowcubeReport):
         """
         GrowcubeReport.__init__(self, 23)
         parts = data.split(self.CMD_INNER)
-        self._pump = int(parts[0])
+        self._channel = int(parts[0])
         self._year = int(parts[1])
         self._month = int(parts[2])
         self._day = int(parts[3])
@@ -225,13 +225,13 @@ class AutoWaterGrowcubeReport(GrowcubeReport):
         self._minute = int(parts[5])
 
     @property
-    def pump(self) -> int:
+    def channel(self) -> int:
         """
-        Pump number 0-3
+        Channel number 0-3
         Returns:
-            Pump number 0-3
+            Channel number 0-3
         """
-        return self._pump
+        return self._channel
 
     @property
     def year(self) -> int:
@@ -293,7 +293,7 @@ class AutoWaterGrowcubeReport(GrowcubeReport):
         Returns:
             A human readable description of the report
         """
-        return f"{self._command}: {self._pump} - {self._year}-{self._month}-{self._day} {self._hour}:{self._minute}"
+        return f"{self._command}: {self._channel} - {self._year}-{self._month}-{self._day} {self._hour}:{self._minute}"
 
 
 class DeviceVersionGrowcubeReport(GrowcubeReport):
@@ -382,16 +382,16 @@ class PumpOpenGrowcubeReport(GrowcubeReport):
             data: Response data
         """
         GrowcubeReport.__init__(self, 26)
-        self._pump = int(data)
+        self._channel = int(data)
 
     @property
-    def pump(self) -> int:
+    def channel(self) -> int:
         """
-        Pump number 0-3
+        Channel number 0-3
         Returns:
-            Pump number 0-3
+            Channel number 0-3
         """
-        return self._pump
+        return self._channel
 
     def get_description(self):
         """
@@ -414,16 +414,16 @@ class PumpCloseGrowcubeReport(GrowcubeReport):
             data: Response data
         """
         GrowcubeReport.__init__(self, 27)
-        self._pump = int(data)
+        self._channel = int(data)
 
     @property
-    def pump(self) -> int:
+    def channel(self) -> int:
         """
-        Pump number 0-3
+        channel number 0-3
         Returns:
-            Pump number 0-3
+            channel number 0-3
         """
-        return self._pump
+        return self._channel
 
     def get_description(self):
         """
@@ -431,7 +431,7 @@ class PumpCloseGrowcubeReport(GrowcubeReport):
         Returns:
             A human readable description of the report
         """
-        return f"{self._command}: pump {self._pump}"
+        return f"{self._command}: channel {self._channel}"
 
 
 class CheckSensorGrowcubeReport(GrowcubeReport):

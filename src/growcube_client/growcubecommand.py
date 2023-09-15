@@ -77,12 +77,13 @@ class GrowcubeCommand:
 class SetWorkModeCommand(GrowcubeCommand):
     """
     Command 43 - Set work mode command
+    No idea what this does, always sent as the first package from the phone app.
     """
     def __init__(self, mode: int):
         """
         SetWorkModeCommand constructor
         Args:
-            mode: 0 = Auto, 1 = Manual
+            mode: Mode.
         """
         super().__init__(self.CMD_SET_WORK_MODE, str(mode))
         self.mode = mode
@@ -117,15 +118,15 @@ class SyncTimeCommand(GrowcubeCommand):
 class PlantEndCommand(GrowcubeCommand):
     """
     Command 45 - Plant end command
-    This deletes any existing curve data for the given pump
+    This deletes any existing curve data for the given channel
     """
-    def __init__(self, pump: int):
+    def __init__(self, channel: int):
         """
         PlantEndCommand constructor
         Args:
-            pump: Pump number 0-3
+            channel: Channel number 0-3
         """
-        super().__init__(self.CMD_PLANT_END, str(pump))
+        super().__init__(self.CMD_PLANT_END, str(channel))
 
 
 # Command 46 - Close pump
@@ -133,28 +134,28 @@ class ClosePumpCommand(GrowcubeCommand):
     """
     Command 46 - Close pump command
     """
-    def __init__(self, pump: int):
+    def __init__(self, channel: int):
         """
         ClosePumpCommand constructor
         Args:
-            pump: Pump number 0-3
+            channel: Channel number 0-3
         """
-        super().__init__(GrowcubeCommand.CMD_CLOSE_PUMP, str(pump))
+        super().__init__(GrowcubeCommand.CMD_CLOSE_PUMP, str(channel))
 
 
 class WaterCommand(GrowcubeCommand):
     """
     Command 47 - Water command
     """
-    def __init__(self, pump: int, state: bool):
+    def __init__(self, channel: int, state: bool):
         """
         WaterCommand constructor
         Args:
-            pump: Pump number 0-3
+            channel: Channel number 0-3
             state: True for start watering or False for stop
         """
-        super().__init__(GrowcubeCommand.CMD_REQ_WATER, f"{pump}@{1 if state else 0}")
-        self.pump = pump
+        super().__init__(GrowcubeCommand.CMD_REQ_WATER, f"{channel}@{1 if state else 0}")
+        self.channel = channel
         self.state = state
 
     def get_description(self) -> str:
@@ -163,36 +164,36 @@ class WaterCommand(GrowcubeCommand):
         Returns:
             A human readable description of the command
         """
-        return f"{self.Command[self.command]}: pump {self.pump}, state {self.state}"
+        return f"{self.Command[self.command]}: channel {self.channel}, state {self.state}"
 
 
 class RequestCurveDataCommand(GrowcubeCommand):
     """
     Command 48 - Request curve data command
     """
-    def __init__(self, pump: int):
+    def __init__(self, channel: int):
         """
         RequestCurveDataCommand constructor
         Args:
-            pump: Pump number 0-3
+            channel: Channel number 0-3
         """
-        super().__init__(GrowcubeCommand.CMD_REQ_CURVE_DATA, str(pump))
+        super().__init__(GrowcubeCommand.CMD_REQ_CURVE_DATA, str(channel))
 
 
 class WaterModeCommand(GrowcubeCommand):
     """
     Command 49 - Water mode command
     """
-    def __init__(self, pump: int, mode: int, min_value: int, max_value: int):
+    def __init__(self, channel: int, mode: int, min_value: int, max_value: int):
         """
         WaterModeCommand constructor
         Args:
-            pump: Pump number 0-3
+            channel: Channel number 0-3
             mode: Mode
             min_value: Min value
             max_value: Max value
         """
-        super().__init__(self.CMD_WATER_MODE, f"{pump}@{mode}@{min_value}@{max_value}")
+        super().__init__(self.CMD_WATER_MODE, f"{channel}@{mode}@{min_value}@{max_value}")
 
 
 
