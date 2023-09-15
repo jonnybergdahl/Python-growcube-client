@@ -352,6 +352,15 @@ class EraseDataGrowcubeReport(GrowcubeReport):
         GrowcubeReport.__init__(self, 25)
         self._success = data == "52d"
 
+    @property
+    def success(self) -> bool:
+        """
+        Success
+        Returns:
+            True if success, otherwise False
+        """
+        return self._success
+
     def get_description(self):
         """
         Get a human readable description of the report
@@ -437,7 +446,7 @@ class CheckSensorGrowcubeReport(GrowcubeReport):
             data: Response data
         """
         GrowcubeReport.__init__(self, 28)
-        self._fault_state = data == 1
+        self._fault_state = data == "1"
 
     @property
     def fault_state(self) -> bool:

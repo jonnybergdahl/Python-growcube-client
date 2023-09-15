@@ -1,6 +1,11 @@
 # Python-growcube-client
 
-Python library for communication with Growcube devices.
+This is an asyncio Python library to communicate with 
+[Elecrow Growcube](https://www.elecrow.com/growcube-gardening-plants-smart-watering-kit-device.html) devices.
+By using this library you can communicate directly with the device, without the need to use the phone app.
+
+Once connected to a device, the library will listen for messages from the device and use a callback function
+to return parsed messages to the application. The application can also send commands to the device.
 
 ## Installation
 
@@ -65,7 +70,8 @@ Received: RepSTHSateCmd: pump: 3, moisture: 33, humidity: 41, temperature: 24
 ## More advanced use
 
 The `src/growcube_app.py` file shows how to use the library in a more advanced application. 
-To use the app, you need to install `npyscreen`first.
+
+To use the app, you first need to install `npyscreen`first.
 
 ```bash
 pip3 install npyscreen
