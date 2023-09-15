@@ -20,6 +20,6 @@ async def main(host: str) -> None:
 
 if __name__ == "__main__":
     # Set host name or IP address
-    HOST = "172.30.2.70"
+    HOST = "172.30.2.72"
 
     asyncio.run(main(HOST))

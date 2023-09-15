@@ -107,8 +107,6 @@ class GrowcubeReport:
             return UnknownGrowcubeReport(message.command, message.payload)
 
 
-
-
 class WaterStateGrowcubeReport(GrowcubeReport):
     """
     Response 20 - RepWaterState
@@ -399,7 +397,7 @@ class PumpOpenGrowcubeReport(GrowcubeReport):
         Returns:
             A human readable description of the report
         """
-        return f"{self._command}: pump {self._pump}"
+        return f"{self._command}: channel {self._channel}"
 
 
 class PumpCloseGrowcubeReport(GrowcubeReport):
@@ -510,16 +508,16 @@ class CheckSensorNotConnectedGrowcubeReport(GrowcubeReport):
             data: Response data
         """
         GrowcubeReport.__init__(self, 30)
-        self._state = data == "0"
+        self._channel = int(data)
 
     @property
-    def state(self) -> bool:
+    def channel(self) -> int:
         """
         State
         Returns:
-            True if sensor is not connected, otherwise False
+            Channel number 0-3
         """
-        return self._state
+        return self._channel
 
     def get_description(self):
         """
@@ -527,7 +525,7 @@ class CheckSensorNotConnectedGrowcubeReport(GrowcubeReport):
         Returns:
             A human readable description of the report
         """
-        return f"{self._command}: state {self._state}"
+        return f"{self._command}: channel {self._channel}"
 
 
 # Response 31
@@ -641,7 +639,17 @@ class CheckSensorLockGrowcubeReport(GrowcubeReport):
         """
         GrowcubeReport.__init__(self, 34)
         temp = data.split(self.CMD_INNER)
+        self._channel = int(temp[0])
         self._lock_state = temp[1]
+
+    @property
+    def channel(self) -> int:
+        """
+        Channel number 0-3
+        Returns:
+            Channel number 0-3
+        """
+        return self._channel
 
     @property
     def lock_state(self) -> bool:
@@ -658,7 +666,7 @@ class CheckSensorLockGrowcubeReport(GrowcubeReport):
         Returns:
             A human readable description of the report
         """
-        return f"{self._command}: lock_state {self._lock_state}"
+        return f"{self._command}: channel {self._channel} lock_state {self._lock_state}"
 
 
 class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
@@ -673,7 +681,18 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
             data: Response data
         """
         GrowcubeReport.__init__(self, 35)
+        temp = data.split(self.CMD_INNER)
+        self._channel = int(data[0])
         self.data = data
+
+    @property
+    def channel(self) -> int:
+        """
+        Channel number 0-3
+        Returns:
+            Channel number 0-3
+        """
+        return self._channel
 
     def get_description(self):
         """
@@ -681,7 +700,7 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
         Returns:
             A human readable description of the report
         """
-        return f"{self._command}: data {self.data}"
+        return f"{self._command}: channel {self._channel}"
 
 
 class UnknownGrowcubeReport(GrowcubeReport):

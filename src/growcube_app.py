@@ -6,6 +6,7 @@ import asyncio
 from growcube_client import GrowcubeClient
 from growcube_client import (DeviceVersionGrowcubeReport, LockStateGrowcubeReport, CheckSensorGrowcubeReport,
                              MoistureHumidityStateGrowcubeReport, WaterStateGrowcubeReport)
+from growcube_client.growcubecommand import RequestCurveDataCommand
 
 MAIN_FORM = "MAIN"
 DATA_FORM = "DATA"
@@ -34,7 +35,7 @@ class DetailForm(npyscreen.ActionFormMinimal):
 
     def create(self):
         column_width = min(self.max_x // 2 - 1, 44)
-        self.footer_widget = self.add(npyscreen.TitleFixedText, name="Commands:", value="Exit: x, Water plants: a, b, c, d", editable=False)
+        self.footer_widget = self.add(npyscreen.TitleFixedText, name="Commands:", value="Exit: x, Water plants: a, b, c, d, Req stats: A, B, C, D", editable=False)
         self.nextrely += 1
         # Add widgets for displaying Growcube data
         self.host_name_widget = self.add(npyscreen.TitleFixedText, name="Host Name:", title="Kuken", value="", max_width=column_width)
@@ -60,6 +61,10 @@ class DetailForm(npyscreen.ActionFormMinimal):
             "b": self.on_water_b,
             "c": self.on_water_c,
             "d": self.on_water_d,
+            "A": self.request_curve_data_a,
+            "B": self.request_curve_data_b,
+            "C": self.request_curve_data_c,
+            "D": self.request_curve_data_d,
         })
 
         # Create a custom log handler and add it to the root logger
@@ -76,25 +81,24 @@ class DetailForm(npyscreen.ActionFormMinimal):
         self.display()
 
     def update_data(self, data):
-        logging.info(f"Got message {data.get_description()}")
         if isinstance(data, MoistureHumidityStateGrowcubeReport):
-            if data._pump == 0:
+            if data.channel == 0:
                 self.humidity_widget.value = f"{data._humidity}%"
                 self.temperature_widget.value = f"{data._temperature}°C"
                 self.moistureA_widget.value = f"{data._moisture}%"
-            elif data._pump == 1:
+            elif data.channel == 1:
                 self.moistureB_widget.value = f"{data._moisture}%"
-            elif data._pump == 2:
+            elif data.channel == 2:
                 self.moistureC_widget.value = f"{data._moisture}%"
-            elif data._pump == 3:
+            elif data.channel == 3:
                 self.moistureD_widget.value = f"{data._moisture}%"
         elif isinstance(data, DeviceVersionGrowcubeReport):
-            self.version_widget.value = data._version
-            self.device_id_widget.value = data._device_id
+            self.version_widget.value = data.version
+            self.device_id_widget.value = data.device_id
         elif isinstance(data, LockStateGrowcubeReport):
-            self.lock_state_widget.value = 'OK' if not data._lock_state else 'Locked'
+            self.lock_state_widget.value = 'OK' if not data.lock_state else 'Locked'
         elif isinstance(data, CheckSensorGrowcubeReport):
-            self.sensor_state_widget.value = 'OK' if not data._fault_state else 'Check sensors'
+            self.sensor_state_widget.value = 'OK' if not data.fault_state else 'Check sensors'
         elif isinstance(data, WaterStateGrowcubeReport):
             self.water_state_widget.value = 'OK' if not data.water_warning else 'Water warning'
         self.display()
@@ -118,6 +122,18 @@ class DetailForm(npyscreen.ActionFormMinimal):
 
     def on_water_d(self, key):
         asyncio.run(self.parentApp.client.water_plant(3, 5))
+
+    def request_curve_data_a(self, key):
+        asyncio.run(self.parentApp.client.send_command(RequestCurveDataCommand(0)))
+
+    def request_curve_data_b(self, key):
+        asyncio.run(self.parentApp.client.send_command(RequestCurveDataCommand(1)))
+
+    def request_curve_data_c(self, key):
+        asyncio.run(self.parentApp.client.send_command(RequestCurveDataCommand(2)))
+
+    def request_curve_data_d(self, key):
+        asyncio.run(self.parentApp.client.send_command(RequestCurveDataCommand(3)))
 
 
 class LogHandler(logging.Handler):

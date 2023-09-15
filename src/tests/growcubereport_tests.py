@@ -52,13 +52,13 @@ class GrowCubeReportTestCase(unittest.TestCase):
         report = CheckDuZhuanGrowcubeReport("1")
         self.assertTrue(report._state)
 
-    def test_check_sensor_not_connect_report_false(self):
+    def test_check_sensor_not_connect_report_b(self):
         report = CheckSensorNotConnectedGrowcubeReport("1")
-        self.assertFalse(report._state)
+        self.assertEqual(1, report.channel)
 
-    def test_check_sensor_not_connect_report_true(self):
+    def test_check_sensor_not_connect_report_a(self):
         report = CheckSensorNotConnectedGrowcubeReport("0")
-        self.assertTrue(report._state)
+        self.assertEqual(0, report.channel)
 
     def test_wifi_state_report(self):
         report = CheckWifiStateGrowcubeReport("1")

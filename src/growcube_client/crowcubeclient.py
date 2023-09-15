@@ -1,6 +1,8 @@
 import asyncio
 import logging
 from typing import Callable
+
+from growcube_client.growcubeenums import Channel
 from growcube_client.growcubemessage import GrowcubeMessage
 from growcube_client.growcubereport import GrowcubeReport
 from growcube_client.growcubecommand import GrowcubeCommand, WaterCommand
@@ -111,6 +113,7 @@ class GrowcubeClient:
                     self.log_debug(f"message: {message._command} - {message.payload}")
                     if self.callback is not None:
                         report = GrowcubeReport.get_report(message)
+                        self.log_info(f"< {report.get_description()}")
                         self.callback(report)
 
             except ConnectionRefusedError:
@@ -153,7 +156,7 @@ class GrowcubeClient:
             A boolean indicating if the command was sent successfully
         """
         try:
-            self.log_info("Sending message %s", command.get_description())
+            self.log_info("> %s", command.get_description())
             message_bytes = command.get_message().encode('ascii')
             self.writer.write(message_bytes)
             await self.writer.drain()
@@ -165,7 +168,7 @@ class GrowcubeClient:
             return False
         return True
 
-    async def water_plant(self, channel: int, duration: int) -> bool:
+    async def water_plant(self, channel: Channel, duration: int) -> bool:
         """
         Water a plant for a given duration. This function will block until the watering is complete.
 
