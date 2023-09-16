@@ -11,10 +11,10 @@ with open(path.join(HERE, 'DESCRIPTION.md'), encoding='utf-8') as f:
 
 setup(
     name='growcube-client',
-    version='1.0.5',
+    version='1.0.6',
     description='A client for Elecrow Growcube plant watering devices',
     long_description=long_description,
-    long_description_content_type="text/markdown",    
+    long_description_content_type="text/markdown",
     author='Jonny Bergdahl',
     author_email='github@bergdahl.it',
     url='https://github.com/jonnybergdahl/Python-growcube-client',

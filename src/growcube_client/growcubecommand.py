@@ -1,5 +1,4 @@
 import datetime
-
 from growcube_client import Channel, WateringMode
 
 """
