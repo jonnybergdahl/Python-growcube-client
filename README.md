@@ -92,3 +92,13 @@ The app will now connect to the Growcube and start listening for messages. The d
 ![Growcube app page 2](assets/app2.png)
 
 Press Tab to move to the OK button. Press Enter to exit the app.
+
+# Auto discovery
+
+You can use the sample script `src/growcube_discover.py` to search for devices on your network. By default, it will
+search for devices on the local network, but if the devices are located in a separate subnet you can also specify 
+that network to search in. 
+
+```bash
+python3 growcube_discover.py 192.168.4.0/24
+```

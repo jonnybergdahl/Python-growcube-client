@@ -5,6 +5,8 @@ By using this library you can communicate directly with the device, without the 
 Once connected to a device, the library will listen for messages from the device and use a callback function
 to return parsed messages to the application. The application can also send commands to the device.
 
+The library can also search for devices on the network.
+
 ## Features
 
 - Connect to the Growcube device
