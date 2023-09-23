@@ -1,5 +1,5 @@
 import datetime
-from growcube_client import Channel, WateringMode
+from .growcubeenums import Channel, WateringMode
 
 """
 Growcube client library
@@ -131,7 +131,7 @@ class PlantEndCommand(GrowcubeCommand):
         Args:
             channel: Channel
         """
-        super().__init__(self.CMD_PLANT_END, str(channel))
+        super().__init__(self.CMD_PLANT_END, str(channel.value))
 
 
 # Command 46 - Close pump
@@ -147,7 +147,7 @@ class ClosePumpCommand(GrowcubeCommand):
         Args:
             channel: Channel
         """
-        super().__init__(GrowcubeCommand.CMD_CLOSE_PUMP, str(channel))
+        super().__init__(GrowcubeCommand.CMD_CLOSE_PUMP, str(channel.value))
 
 
 class WaterCommand(GrowcubeCommand):
@@ -163,7 +163,7 @@ class WaterCommand(GrowcubeCommand):
             channel: Channel
             state: True for start watering or False for stop
         """
-        super().__init__(GrowcubeCommand.CMD_REQ_WATER, f"{channel}@{1 if state else 0}")
+        super().__init__(GrowcubeCommand.CMD_REQ_WATER, f"{channel.value}@{1 if state else 0}")
         self.channel = channel
         self.state = state
 
@@ -188,7 +188,7 @@ class RequestCurveDataCommand(GrowcubeCommand):
         Args:
             channel: Channel
         """
-        super().__init__(GrowcubeCommand.CMD_REQ_CURVE_DATA, str(channel))
+        super().__init__(GrowcubeCommand.CMD_REQ_CURVE_DATA, str(channel.value))
 
 
 class WateringModeCommand(GrowcubeCommand):
@@ -206,7 +206,7 @@ class WateringModeCommand(GrowcubeCommand):
             min_value: Min value
             max_value: Max value
         """
-        super().__init__(self.CMD_WATER_MODE, f"{channel}@{watering_mode.value}@{min_value}@{max_value}")
+        super().__init__(self.CMD_WATER_MODE, f"{str(channel.value)}@{watering_mode.value}@{min_value}@{max_value}")
 
 
 class WiFiSettingsCommand(GrowcubeCommand):

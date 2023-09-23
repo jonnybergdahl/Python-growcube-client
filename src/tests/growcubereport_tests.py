@@ -38,11 +38,11 @@ class GrowCubeReportTestCase(unittest.TestCase):
 
     def test_pump_open_report(self):
         report = PumpOpenGrowcubeReport("0")
-        self.assertEqual(0, report.channel)
+        self.assertEqual(Channel.Channel_A, report.channel)
 
     def test_pump_closed_report(self):
         report = PumpCloseGrowcubeReport("1")
-        self.assertEqual(1, report.channel)
+        self.assertEqual(Channel.Channel_B, report.channel)
 
     def test_check_sensor_report(self):
         report = CheckSensorGrowcubeReport("1")
@@ -54,11 +54,11 @@ class GrowCubeReportTestCase(unittest.TestCase):
 
     def test_check_sensor_not_connect_report_b(self):
         report = CheckSensorNotConnectedGrowcubeReport("1")
-        self.assertEqual(1, report.channel)
+        self.assertEqual(Channel.Channel_B, report.channel)
 
     def test_check_sensor_not_connect_report_a(self):
         report = CheckSensorNotConnectedGrowcubeReport("0")
-        self.assertEqual(0, report.channel)
+        self.assertEqual(Channel.Channel_A, report.channel)
 
     def test_wifi_state_report(self):
         report = CheckWifiStateGrowcubeReport("1")

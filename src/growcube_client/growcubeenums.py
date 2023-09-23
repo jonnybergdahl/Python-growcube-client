@@ -18,10 +18,10 @@ class Channel(Enum):
         Channel_C = Channel C
         Channel_D = Channel D
     """
-    Channel_A: int = 1
-    Channel_B: int = 2
-    Channel_C: int = 3
-    Channel_D: int = 4
+    Channel_A: int = 0
+    Channel_B: int = 1
+    Channel_C: int = 2
+    Channel_D: int = 3
 
 
 class WateringMode(Enum):

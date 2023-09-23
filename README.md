@@ -71,11 +71,7 @@ Received: RepSTHSateCmd: pump: 3, moisture: 33, humidity: 41, temperature: 24
 
 The `src/growcube_app.py` file shows how to use the library in a more advanced application. 
 
-To use the app, you first need to install `npyscreen`first.
-
-```bash
-pip3 install npyscreen
-```
+To use the app, you need to install `wxPython` first, please follow [the directions here](https://wiki.wxpython.org/How%20to%20install%20wxPython).
 
 Start the app with:
 ```bash
@@ -83,15 +79,12 @@ python3 growcube_app.py
 ```
 
 You are greeted with a screen asking for the host name or IP address of the Growcube device. 
-Enter that and press Tab to move to the OK button. Press Enter to move to the next screen.
+Enter that and click the _Submit_ button. The app will connect to your Growcube and starts
+displaying received data.
+
+You can water plants by setting a watering duration and clicking the _Pump X_ button.
 
 ![Growcube app page 1](assets/app1.png)
-
-The app will now connect to the Growcube and start listening for messages. The data will be populated as it arrives.
-
-![Growcube app page 2](assets/app2.png)
-
-Press Tab to move to the OK button. Press Enter to exit the app.
 
 # Auto discovery
 

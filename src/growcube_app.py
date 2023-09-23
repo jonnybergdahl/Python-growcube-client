@@ -1,177 +1,419 @@
-import time
-import logging
-import npyscreen
+import concurrent
+import queue
+import wx
 import threading
 import asyncio
-from growcube_client import GrowcubeClient
+import logging
+from growcube_client import GrowcubeClient, Channel, GrowcubeCommand, PumpOpenGrowcubeReport, PumpCloseGrowcubeReport, \
+    SyncWaterLevelCommand, SyncWaterTimeCommand, SetWorkModeCommand
 from growcube_client import (DeviceVersionGrowcubeReport, LockStateGrowcubeReport, CheckSensorGrowcubeReport,
-                             MoistureHumidityStateGrowcubeReport, WaterStateGrowcubeReport)
-from growcube_client.growcubecommand import RequestCurveDataCommand
+                             MoistureHumidityStateGrowcubeReport, WaterStateGrowcubeReport,
+                             CheckSensorNotConnectedGrowcubeReport)
 
-MAIN_FORM = "MAIN"
-DATA_FORM = "DATA"
-
-
-async def async_client_with_callback(client, callback):
-    await client.connect_and_listen()
+DEBUG_LEVEL = logging.DEBUG
 
 
-class HostNameForm(npyscreen.ActionForm):
+class LogHandler(logging.Handler):
+    def __init__(self, gui):
+        super(LogHandler, self).__init__()
+        self.gui = gui
 
-    def create(self):
-        self.host_name_widget = self.add(npyscreen.TitleText, name='Host name', value="172.30.2.72")
+    def emit(self, record):
+        log_entry = self.format(record)  # Format the log message
+        self.gui.add_log_entry(log_entry)
 
-    def on_ok(self):
-        host_name = self.host_name_widget.value
-        if host_name:
-            self.parentApp.start_async_client(host_name)
-            self.parentApp.setNextForm(DATA_FORM)
-            self.parentApp.getForm(DATA_FORM).set_host_name(host_name)
 
-    def on_cancel(self):
-        self.parentApp.setNextForm(None)
+class WaterCommand:
+    def __init__(self, channel: Channel, duration: int):
+        self.channel = channel
+        self.duration = duration
 
-class DetailForm(npyscreen.ActionFormMinimal):
 
-    def create(self):
-        column_width = min(self.max_x // 2 - 1, 44)
-        self.footer_widget = self.add(npyscreen.TitleFixedText, name="Commands:", value="Exit: x, Water plants: a, b, c, d, Req stats: A, B, C, D", editable=False)
-        self.nextrely += 1
-        # Add widgets for displaying Growcube data
-        self.host_name_widget = self.add(npyscreen.TitleFixedText, name="Host Name:", title="Kuken", value="", max_width=column_width)
-        self.device_id_widget = self.add(npyscreen.TitleFixedText, name="Device ID:", max_width=column_width)
-        self.version_widget = self.add(npyscreen.TitleFixedText, name="Version:", max_width=column_width)
-        self.lock_state_widget = self.add(npyscreen.TitleFixedText, name="Lock state:", value="OK", max_width=column_width)
-        self.sensor_state_widget = self.add(npyscreen.TitleFixedText, name="Sensor state:", value="OK", max_width=column_width)
-        self.water_state_widget = self.add(npyscreen.TitleFixedText, name="Water state:", value="OK", max_width=column_width)
-        self.nextrely = 4
-        self.nextrelx = column_width - 1
-        self.humidity_widget = self.add(npyscreen.TitleFixedText, name="Humidity:", max_width=column_width)
-        self.temperature_widget = self.add(npyscreen.TitleFixedText, name="Temperature:", max_width=column_width)
-        self.moistureA_widget = self.add(npyscreen.TitleFixedText, name="Moisture A:", max_width=column_width)
-        self.moistureB_widget = self.add(npyscreen.TitleFixedText, name="Moisture B:", max_width=column_width)
-        self.moistureC_widget = self.add(npyscreen.TitleFixedText, name="Moisture C:", max_width=column_width)
-        self.moistureD_widget = self.add(npyscreen.TitleFixedText, name="Moisture D:", max_width=column_width)
-        self.nextrely += 1
-        self.nextrelx = 2
-        self.log_widget = self.add(npyscreen.Pager, name="Log:")
-        self.add_handlers({
-            "x": self.on_cancel,
-            "a": self.on_water_a,
-            "b": self.on_water_b,
-            "c": self.on_water_c,
-            "d": self.on_water_d,
-            "A": self.request_curve_data_a,
-            "B": self.request_curve_data_b,
-            "C": self.request_curve_data_c,
-            "D": self.request_curve_data_d,
-        })
+class SimpleGUI(wx.Frame):
+    def __init__(self):
+        super().__init__(None, wx.ID_ANY, "Growcube Python App")
 
         # Create a custom log handler and add it to the root logger
         custom_handler = LogHandler(self)
         logging.root.addHandler(custom_handler)
-        logging.getLogger().setLevel(logging.DEBUG)
+        self.log_lines = []
 
-    def on_ok(self):
-        # Exit application
-        self.parentApp.setNextForm(None)
+        self.host_name = "-"
+        self.version = "-"
+        self.device_id = "-"
+        self.humidity = 0
+        self.temperature = 0
+        self.moisture_a = 0
+        self.moisture_b = 0
+        self.moisture_c = 0
+        self.moisture_d = 0
+        self.lock_state = False
+        self.sensor_state = False
+        self.water_state = False
+        self.sensor_fault_a = False
+        self.sensor_fault_b = False
+        self.sensor_fault_c = False
+        self.sensor_fault_d = False
+        self.pump_state_a = False
+        self.pump_state_b = False
+        self.pump_state_c = False
+        self.pump_state_d = False
 
-    def set_host_name(self, host_name):
-        self.host_name_widget.value = host_name
-        self.display()
+        self.client = None
+        self.client_thread = None
+        self.loop = None
+        self.background_thread_loop = None
+        self.background_thread_executor = None
+        self.exit_background_thread = False
 
-    def update_data(self, data):
-        if isinstance(data, MoistureHumidityStateGrowcubeReport):
-            if data.channel == 0:
-                self.humidity_widget.value = f"{data._humidity}%"
-                self.temperature_widget.value = f"{data._temperature}°C"
-                self.moistureA_widget.value = f"{data._moisture}%"
-            elif data.channel == 1:
-                self.moistureB_widget.value = f"{data._moisture}%"
-            elif data.channel == 2:
-                self.moistureC_widget.value = f"{data._moisture}%"
-            elif data.channel == 3:
-                self.moistureD_widget.value = f"{data._moisture}%"
-        elif isinstance(data, DeviceVersionGrowcubeReport):
-            self.version_widget.value = data.version
-            self.device_id_widget.value = data.device_id
-        elif isinstance(data, LockStateGrowcubeReport):
-            self.lock_state_widget.value = 'OK' if not data.lock_state else 'Locked'
-        elif isinstance(data, CheckSensorGrowcubeReport):
-            self.sensor_state_widget.value = 'OK' if not data.fault_state else 'Check sensors'
-        elif isinstance(data, WaterStateGrowcubeReport):
-            self.water_state_widget.value = 'OK' if not data.water_warning else 'Water warning'
-        self.display()
+        self.command_queue = queue.Queue()
+
+        if self.loop is None:
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
+
+        # Set the window size
+        self.SetSize((1024, 768))
+
+        panel = wx.Panel(self)
+
+        # Create a sizer for the main layout
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # First group box
+        group_box1 = wx.StaticBox(panel, label="Growcube address")
+        group_box_sizer1 = wx.StaticBoxSizer(group_box1, wx.VERTICAL)
+        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.host_name_input = wx.TextCtrl(panel, value="172.30.2.72")
+        button = wx.Button(panel, label="Submit")
+        button.Bind(wx.EVT_BUTTON, self.connect)
+        row_sizer.Add(self.host_name_input, 1, wx.EXPAND | wx.ALL, 5)
+        row_sizer.Add(button, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        group_box_sizer1.Add(row_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Second group box
+        group_box2 = wx.StaticBox(panel, label="Growcube data")
+        group_box_sizer2 = wx.StaticBoxSizer(group_box2, wx.VERTICAL)
+
+        # Data row 1
+        row1_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Host name:")
+        self.host_name_text = wx.StaticText(panel, label="-")
+        label2 = wx.StaticText(panel, label="Humidity:")
+        self.humidity_text = wx.StaticText(panel, label="- %")
+        row1_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row1_sizer.Add(self.host_name_text, 1, wx.EXPAND | wx.ALL, 5)
+        row1_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row1_sizer.Add(self.humidity_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row1_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 2
+        row2_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Device ID")
+        self.device_id_text = wx.StaticText(panel, label="")
+        label2 = wx.StaticText(panel, label="Temperature")
+        self.temperature_text = wx.StaticText(panel, label="-° C")  # You can set initial values here
+        row2_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row2_sizer.Add(self.device_id_text, 1, wx.EXPAND | wx.ALL, 5)
+        row2_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row2_sizer.Add(self.temperature_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row2_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 3
+        row3_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Version")
+        self.version_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Moisture A")
+        self.moisture_a_text = wx.StaticText(panel, label="- %")  # You can set initial values here
+        row3_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row3_sizer.Add(self.version_text, 1, wx.EXPAND | wx.ALL, 5)
+        row3_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row3_sizer.Add(self.moisture_a_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row3_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 4
+        row4_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Lock state:")
+        self.lock_state_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Moisture B:")
+        self.moisture_b_text = wx.StaticText(panel, label="- %")  # You can set initial values here
+        row4_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row4_sizer.Add(self.lock_state_text, 1, wx.EXPAND | wx.ALL, 5)
+        row4_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row4_sizer.Add(self.moisture_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row4_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 5
+        row5_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Sensor state:")
+        self.sensor_state_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Moisture C:")
+        self.moisture_c_text = wx.StaticText(panel, label="- %")  # You can set initial values here
+        row5_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row5_sizer.Add(self.sensor_state_text, 1, wx.EXPAND | wx.ALL, 5)
+        row5_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row5_sizer.Add(self.moisture_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row5_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 6
+        row6_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Water state:")
+        self.water_state_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Moisture D:")
+        self.moisture_d_text = wx.StaticText(panel, label="- %")  # You can set initial values here
+        row6_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row6_sizer.Add(self.water_state_text, 1, wx.EXPAND | wx.ALL, 5)
+        row6_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row6_sizer.Add(self.moisture_d_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row6_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 7
+        row7_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Sensor state A:")
+        self.sensor_fault_a_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Pump state A:")
+        self.pump_state_a_text = wx.StaticText(panel, label="Off")
+        row7_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row7_sizer.Add(self.sensor_fault_a_text, 1, wx.EXPAND | wx.ALL, 5)
+        row7_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row7_sizer.Add(self.pump_state_a_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row7_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 8
+        row8_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Sensor state B:")
+        self.sensor_fault_b_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Pump state B:")
+        self.pump_state_b_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        row8_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row8_sizer.Add(self.sensor_fault_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        row8_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row8_sizer.Add(self.pump_state_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row8_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 9
+        row9_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Sensor state C:")
+        self.sensor_fault_c_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Pump state C:")
+        self.pump_state_c_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        row9_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row9_sizer.Add(self.sensor_fault_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        row9_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row9_sizer.Add(self.pump_state_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row9_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 10
+        row10_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Sensor state D:")
+        self.sensor_fault_d_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Pump state D:")
+        self.pump_state_d_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        row10_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row10_sizer.Add(self.sensor_fault_d_text, 1, wx.EXPAND | wx.ALL, 5)
+        row10_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row10_sizer.Add(self.pump_state_d_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row10_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        group_box3 = wx.StaticBox(panel, label="Watering")
+        group_box_sizer3 = wx.StaticBoxSizer(group_box3, wx.VERTICAL)
+        row11_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Duration (s):")
+        self.watering_duration_text = wx.TextCtrl(panel, value="5")
+        button_a = wx.Button(panel, label="Pump A")
+        button_a.Bind(wx.EVT_BUTTON, self.water_channel_a)
+        button_b = wx.Button(panel, label="Pump B")
+        button_b.Bind(wx.EVT_BUTTON, self.water_channel_b)
+        button_c = wx.Button(panel, label="Pump C")
+        button_c.Bind(wx.EVT_BUTTON, self.water_channel_c)
+        button_d = wx.Button(panel, label="Pump D")
+        button_d.Bind(wx.EVT_BUTTON, self.water_channel_d)
+        row11_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row11_sizer.Add(self.watering_duration_text, 1, wx.EXPAND | wx.ALL, 5)
+        row11_sizer.Add(button_a, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        row11_sizer.Add(button_b, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        row11_sizer.Add(button_c, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        row11_sizer.Add(button_d, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        group_box_sizer3.Add(row11_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Third group box
+        group_box4 = wx.StaticBox(panel, label="Log")
+        group_box_sizer4 = wx.StaticBoxSizer(group_box4, wx.VERTICAL)
+        self.log_text = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(wx.DefaultSize[0], 8 * 22))
+        group_box_sizer4.Add(self.log_text, 1, wx.EXPAND | wx.ALL, 8)
+
+        # Add group boxes to main sizer
+        main_sizer.Add(group_box_sizer1, 0, wx.EXPAND | wx.ALL, 10)
+        main_sizer.Add(group_box_sizer2, 0, wx.EXPAND | wx.ALL, 10)
+        main_sizer.Add(group_box_sizer3, 0, wx.EXPAND | wx.ALL, 10)
+        main_sizer.Add(group_box_sizer4, 0, wx.EXPAND | wx.ALL, 10)
+
+        # Set the main sizer for the panel
+        panel.SetSizer(main_sizer)
+
+        self.status_bar = self.CreateStatusBar()
+        self.status_bar.SetStatusText("Not connected");
+
+        # Center and show the frame
+        # self.Centre()
+        # self.Show()
 
     def add_log_entry(self, log_entry):
-        self.log_widget.values.append(log_entry)
-        self.log_widget.values = self.log_widget.values[-self.log_widget.height:]
-        self.display()
+        print(log_entry)
+        self.log_lines.append(log_entry)
+        self.log_lines = self.log_lines[-10:]
+        wx.CallAfter(self.update_log)
 
-    def on_cancel(self):
-        self.parentApp.setNextForm(None)
+    def update_log(self):
+        log_text = "\n".join(self.log_lines)
+        self.log_text.SetValue(log_text)
 
-    def on_water_a(self, key):
-        asyncio.run(self.parentApp.client.water_plant(0, 5))
+    async def run_client_until_terminated(self):
+        await self.client.connect()
+        while not self.exit_background_thread:
+            if not self.command_queue.empty():
+                command = self.command_queue.get()
+                if isinstance(command, GrowcubeCommand):
+                    self.client.send_command(command)
+                elif isinstance(command, WaterCommand):
+                    await self.client.water_plant(command.channel, command.duration)
+            await asyncio.sleep(1)
 
-    def on_water_b(self, key):
-        asyncio.run(self.parentApp.client.water_plant(1, 5))
+    def start_async_client_thread(self, host_name):
+        self.client = GrowcubeClient(host_name, self.update_data, on_connected_callback=self.on_connected,
+                                     on_disconnected_callback=self.on_disconnected,
+                                     log_level=DEBUG_LEVEL)
+        self.exit_background_thread = False
+        if self.background_thread_loop is None:
+            self.background_thread_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.background_thread_loop)
+            self.background_thread_executor = concurrent.futures.ThreadPoolExecutor()
+        self.background_thread_loop.run_until_complete(self.run_client_until_terminated())
 
-    def on_water_c(self, key):
-        asyncio.run(self.parentApp.client.water_plant(2, 5))
+    def stop_async_client_thread(self):
+        if self.client is not None:
+            self.client.disconnect()
+            self.exit_background_thread = True;
+        if self.client_thread is not None:
+            self.client_thread.join()
 
-    def on_water_d(self, key):
-        asyncio.run(self.parentApp.client.water_plant(3, 5))
+    def connect(self, event):
+        if self.client is not None:
+            self.stop_async_client_thread()
 
-    def request_curve_data_a(self, key):
-        asyncio.run(self.parentApp.client.send_command(RequestCurveDataCommand(0)))
+        self.host_name = self.host_name_input.GetValue()
+        self.client_thread = threading.Thread(target=self.start_async_client_thread, args=(self.host_name,))
+        self.client_thread.start()
 
-    def request_curve_data_b(self, key):
-        asyncio.run(self.parentApp.client.send_command(RequestCurveDataCommand(1)))
+    def update_status_bar(self, status):
+        self.status_bar.SetStatusText(status)
 
-    def request_curve_data_c(self, key):
-        asyncio.run(self.parentApp.client.send_command(RequestCurveDataCommand(2)))
+    def on_connected(self, host):
+        wx.CallAfter(self.update_status_bar, f"Connected to {host}")
 
-    def request_curve_data_d(self, key):
-        asyncio.run(self.parentApp.client.send_command(RequestCurveDataCommand(3)))
+    def on_disconnected(self, host):
+        wx.CallAfter(self.update_status_bar, f"Disconnected from {host}")
 
+    def update_data(self, data):
+        self.add_log_entry(f"< {data.get_description()}")
+        if isinstance(data, DeviceVersionGrowcubeReport):
+            self.version = data.version
+            self.device_id = data.device_id
+        elif isinstance(data, MoistureHumidityStateGrowcubeReport):
+            if data.channel == 0:
+                self.humidity = data.humidity
+                self.temperature = data.temperature
+                self.moisture_a = data.moisture
+            elif data.channel == 1:
+                self.moisture_b = data.moisture
+            elif data.channel == 2:
+                self.moisture_c = data.moisture
+            elif data.channel == 3:
+                self.moisture_d = data.moisture
+        elif isinstance(data, LockStateGrowcubeReport):
+            self.lock_state = data.lock_state
+        elif isinstance(data, CheckSensorGrowcubeReport):
+            self.sensor_state = data.fault_state
+        elif isinstance(data, CheckSensorNotConnectedGrowcubeReport):
+            if data.channel == Channel.Channel_A:
+                self.sensor_fault_a = True
+            elif data.channel == Channel.Channel_B:
+                self.sensor_fault_b = True
+            elif data.channel == Channel.Channel_C:
+                self.sensor_fault_c = True
+            elif data.channel == Channel.Channel_D:
+                self.sensor_fault_d = True
+        elif isinstance(data, WaterStateGrowcubeReport):
+            self.water_state = data.water_warning
+        elif isinstance(data, PumpOpenGrowcubeReport):
+            if data.channel == Channel.Channel_A:
+                self.pump_state_a = True
+            elif data.channel == Channel.Channel_B:
+                self.pump_state_b = True
+            elif data.channel == Channel.Channel_C:
+                self.pump_state_c = True
+            elif data.channel == Channel.Channel_D:
+                self.pump_state_d = True
+        elif isinstance(data, PumpCloseGrowcubeReport):
+            if data.channel == Channel.Channel_A:
+                self.pump_state_a = False
+            elif data.channel == Channel.Channel_B:
+                self.pump_state_b = False
+            elif data.channel == Channel.Channel_C:
+                self.pump_state_c = False
+            elif data.channel == Channel.Channel_D:
+                self.pump_state_d = False
+        wx.CallAfter(self.update_gui, None)
 
-class LogHandler(logging.Handler):
-    def __init__(self, log_form):
-        super(LogHandler, self).__init__()
-        self.log_form = log_form
+    def _water_channel(self, channel: Channel) -> None:
+        duration = 0
+        value = self.watering_duration_text.GetValue()
+        if value.isnumeric():
+            duration = int(value)
+        if duration > 0:
+            self.command_queue.put(WaterCommand(channel, duration))
 
-    def emit(self, record):
-        log_entry = self.format(record)  # Format the log message
-        self.log_form.add_log_entry(log_entry)
+    def water_channel_a(self, event):
+        self._water_channel(Channel.Channel_A)
 
+    def water_channel_b(self, event):
+        self._water_channel(Channel.Channel_B)
 
-class GrowcubeApp(npyscreen.NPSAppManaged):
-    def onStart(self):
-        # Add the forms to the app
-        self.addForm(MAIN_FORM, HostNameForm, name="Growcube host name")
-        self.addForm(DATA_FORM, DetailForm, name="Growcube data")
+    def water_channel_c(self, event):
+        self._water_channel(Channel.Channel_C)
 
-    def start_async_client(self, host_name):
-        def callback(data):
-            # This callback receives data from the Growcube client thread
-            self.getForm(DATA_FORM).update_data(data)
+    def water_channel_d(self, event):
+        self._water_channel(Channel.Channel_D)
 
-        # Start the async background thread
-        self.async_thread = threading.Thread(target=self.async_runner, args=(host_name, callback))
-        self.async_thread.daemon = True
-        self.async_thread.start()
-
-    def async_runner(self, host_name, callback):
-        time.sleep(2)   # Give the GUI time to initialize
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        self.client = GrowcubeClient(host_name, callback)
-        client_task = loop.create_task(async_client_with_callback(self.client, callback))
-        loop.run_forever()
+    def update_gui(self, _):
+        self.host_name_text.SetLabel(self.host_name)
+        self.version_text.SetLabel(self.version)
+        self.device_id_text.SetLabel(self.device_id)
+        self.humidity_text.SetLabel(f"{self.humidity} %")
+        self.temperature_text.SetLabel(f"{self.temperature} °C")
+        self.moisture_a_text.SetLabel(f"{self.moisture_a} %")
+        self.moisture_b_text.SetLabel(f"{self.moisture_b} %")
+        self.moisture_c_text.SetLabel(f"{self.moisture_c} %")
+        self.moisture_d_text.SetLabel(f"{self.moisture_d} %")
+        self.lock_state_text.SetLabel('OK' if not self.lock_state else 'Locked')
+        self.sensor_state_text.SetLabel('OK' if not self.sensor_state else 'Check sensors')
+        self.water_state_text.SetLabel('OK' if not self.water_state else 'Water warning')
+        self.sensor_fault_a_text.SetLabel('OK' if not self.sensor_fault_a else 'Failed')
+        self.sensor_fault_b_text.SetLabel('OK' if not self.sensor_fault_b else 'Failed')
+        self.sensor_fault_c_text.SetLabel('OK' if not self.sensor_fault_b else 'Failed')
+        self.sensor_fault_d_text.SetLabel('OK' if not self.sensor_fault_b else 'Failed')
+        self.pump_state_a_text.SetLabel('On' if self.pump_state_a else 'Off')
+        self.pump_state_b_text.SetLabel('On' if self.pump_state_b else 'Off')
+        self.pump_state_c_text.SetLabel('On' if self.pump_state_c else 'Off')
+        self.pump_state_d_text.SetLabel('On' if self.pump_state_d else 'Off')
 
 
 if __name__ == "__main__":
-    app = GrowcubeApp()
-    app.run()
-
+    logging.basicConfig(level=logging.INFO)
+    app = wx.App(False)
+    frame = SimpleGUI()
+    frame.Show()
+    app.MainLoop()
+    # Shut down any background tasks
+    frame.stop_async_client_thread()
+    print("Done")

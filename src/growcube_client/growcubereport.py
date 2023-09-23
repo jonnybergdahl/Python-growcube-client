@@ -1,5 +1,8 @@
 from typing_extensions import Self
 from datetime import datetime
+
+from growcube_client import Channel
+
 """
 Growcube client library
 https://github.com/jonnybergdahl/Python-growcube-client
@@ -380,10 +383,10 @@ class PumpOpenGrowcubeReport(GrowcubeReport):
             data: Response data
         """
         GrowcubeReport.__init__(self, 26)
-        self._channel = int(data)
+        self._channel = Channel(int(data))
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         """
         Channel number 0-3
         Returns:
@@ -412,10 +415,10 @@ class PumpCloseGrowcubeReport(GrowcubeReport):
             data: Response data
         """
         GrowcubeReport.__init__(self, 27)
-        self._channel = int(data)
+        self._channel = Channel(int(data))
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         """
         channel number 0-3
         Returns:
@@ -508,10 +511,10 @@ class CheckSensorNotConnectedGrowcubeReport(GrowcubeReport):
             data: Response data
         """
         GrowcubeReport.__init__(self, 30)
-        self._channel = int(data)
+        self._channel = Channel(int(data))
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         """
         State
         Returns:
