@@ -74,8 +74,8 @@ class GrowcubeClient:
             loop = asyncio.get_event_loop()
             connection_coroutine = loop.create_connection(lambda: GrowcubeProtocol(self.on_connected, self.on_message, self.on_connection_lost), self.host, self.port)
             self.transport, self.protocol = await asyncio.wait_for(connection_coroutine, timeout=self.connection_timeout)
-
             logging.debug("Connected to %s:%i", self.host, self.port)
+            return True
         except ConnectionRefusedError:
             logging.error(f"Connection to {self.host} refused")
         except asyncio.CancelledError:
@@ -86,6 +86,7 @@ class GrowcubeClient:
             logging.error(f"Connection to {self.host} timed out")
         except Exception as e:
             logging.error(f"Error {str(e)}")
+        return False
 
     def disconnect(self) -> None:
         """
@@ -134,4 +135,7 @@ class GrowcubeClient:
         if success:
             await asyncio.sleep(duration)
             success = self.send_command(WaterCommand(channel, False))
+            if not success:
+                # Try again just to be sure
+                success = self.send_command(WaterCommand(channel, False))
         return success
