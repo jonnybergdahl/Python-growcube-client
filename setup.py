@@ -11,7 +11,7 @@ with open(path.join(HERE, 'DESCRIPTION.md'), encoding='utf-8') as f:
 
 setup(
     name='growcube-client',
-    version='1.0.8',
+    version='1.0.9',
     description='A client for Elecrow Growcube plant watering devices',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -31,5 +31,8 @@ setup(
         'Topic :: Home Automation',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
     ]
 )

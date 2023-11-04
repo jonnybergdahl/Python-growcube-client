@@ -1,5 +1,9 @@
 # Python-growcube-client
 
+[![PyPI version](https://badge.fury.io/py/growcube-client.svg)](https://badge.fury.io/py/growcube-client)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/growcube-client.svg)](https://pypi.python.org/pypi/growcube-client/)
+[![PyPI license](https://img.shields.io/pypi/l/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
+
 This is an asyncio Python library to communicate with 
 [Elecrow Growcube](https://www.elecrow.com/growcube-gardening-plants-smart-watering-kit-device.html) devices.
 By using this library you can communicate directly with the device, without the need to use the phone app.
