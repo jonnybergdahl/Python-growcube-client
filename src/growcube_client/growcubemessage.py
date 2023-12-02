@@ -11,7 +11,25 @@ Date: 2023-09-05
 class GrowcubeMessage:
     """
     Growcube protocol message base class
+
+    :cvar HEADER: The header for a Growcube protocol message.
+    :vartype HEADER: str
+    :cvar DELIMITER: The delimiter used in the message.
+    :vartype DELIMITER: str
+    :cvar END_DELIMITER: The end delimiter used in the message.
+    :vartype END_DELIMITER: str
+    :cvar EMPTY_MESSAGE: An empty message used as a template.
+    :vartype EMPTY_MESSAGE: str
+
+    :ivar _command: The command value.
+    :type _command: int
+    :ivar _payload: The message payload.
+    :type _payload: str
+    :ivar _data: The complete message as bytes.
+    :type _data: bytes
     """
+
+
     HEADER = 'elea'
     DELIMITER = '#'
     END_DELIMITER = '#'
@@ -20,10 +38,13 @@ class GrowcubeMessage:
     def __init__(self, command:int, payload:str, data:bytes):
         """
         GrowcubeMessage constructor
-        Args:
-            command: Command value
-            payload: Message payload
-            data: The complete message as bytes
+
+        :param command: Command value.
+        :type command: int
+        :param payload: Message payload.
+        :type payload: str
+        :param data: The complete message as bytes.
+        :type data: bytes
         """
         self._command = command
         self._payload = payload
@@ -33,8 +54,9 @@ class GrowcubeMessage:
     def command(self):
         """
         Command value
-        Returns:
-            Command value
+
+        :return: Command value.
+        :rtype: int
         """
         return self._command
 
@@ -42,8 +64,9 @@ class GrowcubeMessage:
     def payload(self):
         """
         Message payload
-        Returns:
-            Message payload
+
+        :return: Message payload.
+        :rtype: str
         """
         return self._payload
 
@@ -51,23 +74,24 @@ class GrowcubeMessage:
     def data(self) -> bytes:
         """
         The complete message as bytes
-        Returns:
-            The complete message as bytes
+
+        :return: The complete message as bytes.
+        :rtype: bytes
         """
         return self._data
 
     @staticmethod
     def from_bytes(data: bytearray) -> (int, Self):
         """
-        Tries to construct a complete GrowcubeMessage from the data, and returns
-        the index of the next non consumed data in the buffer, together with the message
-        Converts a byte array to a GrowcubeMessage instance
-        Args:
-            data: the current data buffer
+        Tries to construct a complete GrowcubeMessage from the data and returns
+        the index of the next non-consumed data in the buffer, together with the message.
+        Converts a byte array to a GrowcubeMessage instance.
 
-        Returns:
-            The index of the next non consumed data in the buffer, together with the message,
-            or the next found start index and None if the message is incomplete
+        :param data: The current data buffer.
+        :type data: bytearray
+        :return: The index of the next non-consumed data in the buffer, together with the message,
+                 or the next found start index and None if the message is incomplete.
+        :rtype: tuple[int, GrowcubeMessage] or tuple[int, None]
         """
         message_str = data.decode('ascii')
 
@@ -110,13 +134,14 @@ class GrowcubeMessage:
     @staticmethod
     def to_bytes(command: int, data: str) -> bytes:
         """
-        Creates a bytearray representation of a message as used in the protocol
-        Args:
-            command: Command value
-            data: Data to send
+        Creates a bytearray representation of a message as used in the protocol.
 
-        Returns:
-            A bytearray representation of a message as used in the protocol
+        :param command: Command value.
+        :type command: int
+        :param data: Data to send.
+        :type data: str
+        :return: A bytearray representation of a message as used in the protocol.
+        :rtype: bytes
         """
         result = f"{GrowcubeMessage.HEADER}{command:02d}{GrowcubeMessage.DELIMITER}{len(data)}" + \
                  f"{GrowcubeMessage.DELIMITER}{data}{GrowcubeMessage.DELIMITER}"

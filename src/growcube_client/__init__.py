@@ -3,5 +3,5 @@ from .growcubemessage import *
 from .growcubecommand import *
 from .growcubereport import *
 from .growcubeprotocol import *
-from .crowcubeclient import *
+from .growcubeclient import *
 from .growcubediscovery import *

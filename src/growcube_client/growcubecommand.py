@@ -13,6 +13,43 @@ Date: 2023-09-05
 class GrowcubeCommand:
     """
     Growcube command base class
+
+    :cvar Command: Dictionary mapping command codes to command names.
+    :vartype Command: dict
+    :cvar CHD_HEAD: Command header for CHD messages.
+    :vartype CHD_HEAD: str
+    :cvar CMD_SET_WORK_MODE: Command code for SetWorkModeCmd.
+    :vartype CMD_SET_WORK_MODE: str
+    :cvar CMD_SYNC_TIME: Command code for SyncTimeCmd.
+    :vartype CMD_SYNC_TIME: str
+    :cvar CMD_PLANT_END: Command code for PlantEndCmd.
+    :vartype CMD_PLANT_END: str
+    :cvar CMD_CLOSE_PUMP: Command code for ClosePumpCmd.
+    :vartype CMD_CLOSE_PUMP: str
+    :cvar CMD_REQ_WATER: Command code for ReqWaterCmd.
+    :vartype CMD_REQ_WATER: str
+    :cvar CMD_REQ_CURVE_DATA: Command code for ReqCurveDataCmd.
+    :vartype CMD_REQ_CURVE_DATA: str
+    :cvar CMD_WATER_MODE: Command code for WaterModeCmd.
+    :vartype CMD_WATER_MODE: str
+    :cvar CMD_WIFI_SETTINGS: Command code for WifiSettingsCmd.
+    :vartype CMD_WIFI_SETTINGS: str
+    :cvar MSG_SYNC_WATER_LEVEL: Command code for SyncWaterLevelCmd.
+    :vartype MSG_SYNC_WATER_LEVEL: str
+    :cvar MSG_SYNC_WATER_TIME: Command code for SyncWaterTimeCmd.
+    :vartype MSG_SYNC_WATER_TIME: str
+    :cvar MSG_DEVICE_UPGRADE: Command code for DeviceUpgradeCmd.
+    :vartype MSG_DEVICE_UPGRADE: str
+    :cvar MSG_FACTORY_RESET: Command code for FactoryResetCmd.
+    :vartype MSG_FACTORY_RESET: str
+
+    :ivar command: The command code.
+    :type command: str
+    :ivar message: The message to send.
+    :type message: str
+
+    :param command: A string from the Command dictionary keys.
+    :param message: The message to send.
     """
     Command = {
         "43": "SetWorkModeCmd",
@@ -46,18 +83,21 @@ class GrowcubeCommand:
     def __init__(self, command: str, message: str):
         """
         GrowcubeCommand constructor
-        Args:
-            command: A string from the Command dictionary keys
-            message: The message to send
+
+        :param command: A string from the Command dictionary keys.
+        :type command: str
+        :param message: The message to send.
+        :type message: str
         """
         self.command = command;
         self.message = message
 
     def get_message(self) -> str:
         """
-        Get the complete message for sending to the Growcube device
-        Returns:
-            The complete message
+        Get the complete message for sending to the Growcube device.
+
+        :return: The complete message.
+        :rtype: str
         """
         if self.message is not None:
             return f"elea{self.command}#{len(self.message)}#{self.message}#"
@@ -66,9 +106,10 @@ class GrowcubeCommand:
 
     def get_description(self) -> str:
         """
-        Get a human readable description of the command
-        Returns:
-            A human readable description of the command
+        Get a human-readable description of the command.
+
+        :return: A human-readable description of the command.
+        :rtype: str
         """
         if self.command in self.Command:
             return self.Command[self.command]
@@ -79,14 +120,16 @@ class GrowcubeCommand:
 class SetWorkModeCommand(GrowcubeCommand):
     """
     Command 43 - Set work mode command
-    No idea what this does, always sent as the first package from the phone app.
+
+    This command is used to set the work mode, and it is often sent as the first package from the phone app.
     """
 
     def __init__(self, mode: int):
         """
         SetWorkModeCommand constructor
-        Args:
-            mode: Mode.
+
+        :param mode: The work mode.
+        :type mode: int
         """
         super().__init__(self.CMD_SET_WORK_MODE, str(mode))
         self.mode = mode
@@ -94,8 +137,9 @@ class SetWorkModeCommand(GrowcubeCommand):
     def get_description(self) -> str:
         """
         Get a human readable description of the command
-        Returns:
-            A human readable description of the command
+
+        :return: A human readable description of the command
+        :rtype: str
         """
         if self.mode == 0:
             return "Auto"
@@ -108,13 +152,14 @@ class SetWorkModeCommand(GrowcubeCommand):
 class SyncTimeCommand(GrowcubeCommand):
     """
     Command 44 - Sync time command
+
+    This command is used to set the device time.
     """
 
     def __init__(self, timestamp: datetime):
         """
         SyncTimeCommand constructor
-        Args:
-            timestamp: The timestamp to use for the command
+        :param timestamp: The timestamp to use for the command
         """
         super().__init__(self.CMD_SYNC_TIME, timestamp.strftime("%Y@%m@%d@%H@%M@%S"))  # Java: yyyy@MM@dd@HH@mm@ss
 
@@ -128,8 +173,9 @@ class PlantEndCommand(GrowcubeCommand):
     def __init__(self, channel: Channel):
         """
         PlantEndCommand constructor
-        Args:
-            channel: Channel
+
+        :param channel: The channel to delete curve data for
+        :type channel: Channel
         """
         super().__init__(self.CMD_PLANT_END, str(channel.value))
 
@@ -138,14 +184,15 @@ class PlantEndCommand(GrowcubeCommand):
 class ClosePumpCommand(GrowcubeCommand):
     """
     Command 46 - Close pump command
-    This deletes any pump releated settings for the given channel
+    This deletes any pump related settings for the given channel
     """
 
     def __init__(self, channel: Channel):
         """
         ClosePumpCommand constructor
-        Args:
-            channel: Channel
+
+        :param channel: The channel to delete pump settings for
+        :type channel: Channel
         """
         super().__init__(GrowcubeCommand.CMD_CLOSE_PUMP, str(channel.value))
 
@@ -159,9 +206,11 @@ class WaterCommand(GrowcubeCommand):
     def __init__(self, channel: Channel, state: bool):
         """
         WaterCommand constructor
-        Args:
-            channel: Channel
-            state: True for start watering or False for stop
+
+        :param channel: Channel
+        :type channel: Channel
+        :param state: True for start watering or False for stop
+        :type state: bool
         """
         super().__init__(GrowcubeCommand.CMD_REQ_WATER, f"{channel.value}@{1 if state else 0}")
         self.channel = channel
@@ -170,8 +219,9 @@ class WaterCommand(GrowcubeCommand):
     def get_description(self) -> str:
         """
         Get a human readable description of the command
-        Returns:
-            A human readable description of the command
+
+        :return: A human readable description of the command
+        :rtype: str
         """
         return f"{self.Command[self.command]}: channel {self.channel}, state {self.state}"
 
@@ -185,8 +235,9 @@ class RequestCurveDataCommand(GrowcubeCommand):
     def __init__(self, channel: Channel):
         """
         RequestCurveDataCommand constructor
-        Args:
-            channel: Channel
+
+        :param channel: Channel
+        :type channel: Channel
         """
         super().__init__(GrowcubeCommand.CMD_REQ_CURVE_DATA, str(channel.value))
 
@@ -200,11 +251,15 @@ class WateringModeCommand(GrowcubeCommand):
     def __init__(self, channel: Channel, watering_mode: WateringMode, min_value: int, max_value: int):
         """
         WaterModeCommand constructor
-        Args:
-            channel: Channel
-            watering_mode: Mode
-            min_value: Min value
-            max_value: Max value
+
+        :param channel: Channel
+        :type channel: Channel
+        :param watering_mode: Mode
+        :type watering_mode: WateringMode
+        :param min_value: Min value
+        :type min_value: int
+        :param max_value: Max value
+        :type max_value: int
         """
         super().__init__(self.CMD_WATER_MODE, f"{str(channel.value)}@{watering_mode.value}@{min_value}@{max_value}")
 
@@ -218,9 +273,11 @@ class WiFiSettingsCommand(GrowcubeCommand):
     def __init__(self, ssid: str, password: str):
         """
         WiFiSettingsCommand constructor
-        Args:
-            ssid: WiFi SSID
-            password: WiFi password
+
+        :param ssid: SSID
+        :type ssid: str
+        :param password: Password
+        :type password: str
         """
         super().__init__(self.CMD_WIFI_SETTINGS, f"{ssid}@{password}")
 

@@ -48,9 +48,9 @@ class GrowCubeReportTestCase(unittest.TestCase):
         report = CheckSensorGrowcubeReport("1")
         self.assertTrue(report._fault_state)
 
-    def test_check_du_zhuan_report(self):
-        report = CheckDuZhuanGrowcubeReport("1")
-        self.assertTrue(report._state)
+    def test_check_pump_blocked_report(self):
+        report = CheckPumpBlockedGrowcubeReport("1")
+        self.assertEqual(1, report.channel)
 
     def test_check_sensor_not_connect_report_b(self):
         report = CheckSensorNotConnectedGrowcubeReport("1")

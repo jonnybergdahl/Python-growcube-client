@@ -10,13 +10,16 @@ Date: 2023-09-05
 
 class Channel(Enum):
     """
-    Channel
+    Enum representing watering channels
 
-    Attributes:
-        Channel_A = Channel A
-        Channel_B = Channel B
-        Channel_C = Channel C
-        Channel_D = Channel D
+    :cvar Channel_A: Channel A
+    :vartype Channel_A: int
+    :cvar Channel_B: Channel B
+    :vartype Channel_B: int
+    :cvar Channel_C: Channel C
+    :vartype Channel_C: int
+    :cvar Channel_D: Channel D
+    :vartype Channel_D: int
     """
     Channel_A: int = 0
     Channel_B: int = 1
@@ -26,12 +29,14 @@ class Channel(Enum):
 
 class WateringMode(Enum):
     """
-    Watering mode
+    Enum representing the configured watering mode
 
-    Attributes:
-        Smart = Smart watering based on moisture level
-        SmartOutside = Smart watering, outside of sunlight hours
-        Scheduled = Scheduled watering
+    :cvar Smart: Smart watering
+    :vartype Smart: int
+    :cvar SmartOutside: Smart watering "outside" (haven't seen this in use in the app)
+    :vartype SmartOutside: int
+    :cvar Scheduled: Scheduled watering
+    :vartype Scheduled: int
     """
     Smart: int = 1
     SmartOutside: int = 2

@@ -47,7 +47,7 @@ async def main() -> None:
     if args.subnet:
         subnet = ipaddress.IPv4Network(args.subnet, strict=False)
     else:
-        subnet = guess_subnet()
+        subnet = None # guess_subnet()
 
     discovery = GrowcubeDiscovery(log_level=logging.DEBUG)
     print(f"Discovering Growcube clients on subnet {subnet}")

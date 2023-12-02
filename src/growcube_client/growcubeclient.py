@@ -1,12 +1,12 @@
 import asyncio
 import logging
 from typing import Callable
-
 from .growcubeenums import Channel
 from .growcubemessage import GrowcubeMessage
 from .growcubereport import GrowcubeReport
 from .growcubecommand import GrowcubeCommand, WaterCommand
 from .growcubeprotocol import GrowcubeProtocol
+
 """
 Growcube client library
 https://github.com/jonnybergdahl/Python-growcube-client
@@ -18,6 +18,31 @@ Date: 2023-09-05
 class GrowcubeClient:
     """
     Growcube client class
+
+    :ivar host: The name or IP address of the Growcube device.
+    :type host: str
+    :ivar port: The port number for the connection. (Default: 8800)
+    :type port: int
+    :ivar callback: Callback function to receive data from the Growcube.
+    :type callback: Callable[[GrowcubeReport], None]
+    :ivar on_connected_callback: Callback function for when the connection is established.
+    :type on_connected_callback: Callable[[str], None] or None
+    :ivar on_disconnected_callback: Callback function for when the connection is lost.
+    :type on_disconnected_callback: Callable[[str], None] or None
+    :ivar log_level: Logging level. (Default: logging.INFO)
+    :type log_level: int
+    :ivar _exit: Internal flag indicating if the client is exiting.
+    :type _exit: bool
+    :ivar _data: Buffer to accumulate received data.
+    :type _data: bytes
+    :ivar transport: The transport instance associated with the protocol.
+    :type transport: asyncio.Transport or None
+    :ivar protocol: The protocol instance associated with the connection.
+    :type protocol: GrowcubeProtocol or None
+    :ivar connected: Indicates whether the client is connected to the Growcube.
+    :type connected: bool
+    :ivar connection_timeout: Timeout for connection attempts. (Default: 5 seconds)
+    :type connection_timeout: int
     """
     host: str
 
@@ -27,10 +52,13 @@ class GrowcubeClient:
                  log_level: int = logging.INFO) -> None:
         """
         GrowcubeClient constructor
-        Args:
-            host: name or IP address of the Growcube device
-            callback: callback function to receive data from the Growcube
-            log_level: logging level
+
+        :param host: Name or IP address of the Growcube device.
+        :param callback: Callback function to receive data from the Growcube.
+        :param on_connected_callback: Callback function for when the connection is established.
+        :param on_disconnected_callback: Callback function for when the connection is lost.
+        :param log_level: Logging level.
+        :type log_level: int
         """
         self.host = host
         self.port = 8800
@@ -46,18 +74,30 @@ class GrowcubeClient:
         self.connection_timeout = 5
 
     def on_connected(self):
+        """
+        Callback function for when the connection is established
+        """
         self.connected = True
         logging.debug(f"Connected to {self.host}")
         if self.on_connected_callback:
             self.on_connected_callback(self.host)
 
     def on_message(self, message: GrowcubeMessage) -> Callable[[GrowcubeReport], None]:
+        """
+        Callback function for when a message is received from the Growcube
+
+        :param message: The received GrowcubeMessage.
+        :type message: GrowcubeMessage
+        """
         report = GrowcubeReport.get_report(message)
         logging.debug(f"< {report.get_description()}")
         if self.callback:
             self.callback(report)
 
     def on_connection_lost(self):
+        """
+        Callback function for when the connection is lost
+        """
         logging.debug(f"Connection to {self.host} lost")
         self.connected = False
         if self.on_disconnected_callback:
@@ -66,8 +106,9 @@ class GrowcubeClient:
     async def connect(self) -> bool:
         """
         Connect to the Growcube and start listening for data.
-        Returns:
-            True if connection was successful, otherwise False
+
+        :return: True if the connection was successful, otherwise False.
+        :rtype: bool
         """
         try:
             logging.debug("Connecting to %s:%i", self.host, self.port)
@@ -91,8 +132,8 @@ class GrowcubeClient:
     def disconnect(self) -> None:
         """
         Disconnect from the Growcube
-        Returns:
-            None
+
+        :return: None
         """
         logging.info("Disconnecting")
         if self.transport:
@@ -100,13 +141,12 @@ class GrowcubeClient:
 
     def send_command(self, command: GrowcubeCommand) -> bool:
         """
-        Send a command to the Growcube. C
+        Send a command to the Growcube.
 
-        Args:
-            command: A GrowcubeCommand object
-
-        Returns:
-            A boolean indicating if the command was sent successfully
+        :param command: A GrowcubeCommand object.
+        :type command: GrowcubeCommand
+        :return: True if the command was sent successfully, otherwise False.
+        :rtype: bool
         """
         try:
             logging.info("> %s", command.get_description())
@@ -124,12 +164,12 @@ class GrowcubeClient:
         """
         Water a plant for a given duration. This function will block until the watering is complete.
 
-        Args:
-            channel: Channel number 0-3
-            duration: Duration in seconds
-
-        Returns:
-            A boolean indicating if the watering was successful
+        :param channel: Channel number 0-3.
+        :type channel: Channel
+        :param duration: Duration in seconds.
+        :type duration: int
+        :return: True if the watering was successful, otherwise False.
+        :rtype: bool
         """
         success = self.send_command(WaterCommand(channel, True))
         if success:
