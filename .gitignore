@@ -161,4 +161,6 @@ cython_debug/
 
 .DS_Store
 _build/
-
+html/
+docs/_images/
+README.rst
