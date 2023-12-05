@@ -19,7 +19,7 @@ pip install growcube-client
 
 ## Getting started
 
-The `src/rowcube.sample.py` file shows how to use the library. It defines a callback function where the GrowcubeClient
+The `src/growcube_sample.py` file shows how to use the library. It defines a callback function where the GrowcubeClient
 sends messages as they arrive from the Growcube device. To use the sample, change the `HOST` variable to the host
 name or IP address of the Growcube device. Then run the sample with:
 
