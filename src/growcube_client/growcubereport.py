@@ -1,5 +1,5 @@
-from typing_extensions import Self
 from datetime import datetime
+from typing import Optional
 
 from growcube_client import Channel
 
@@ -44,7 +44,7 @@ class GrowcubeReport:
     }
     CMD_INNER = "@"
 
-    def __init__(self, command):
+    def __init__(self, command: int):
         """
         GrowcubeReport constructor
 
@@ -73,10 +73,10 @@ class GrowcubeReport:
         :return: A human-readable description of the report.
         :rtype: str
         """
-        print(self._command)
+        return f"command {self._command}"
 
     @staticmethod
-    def get_report(message) -> Self:
+    def get_report(message) -> Optional['GrowcubeReport']:
         """
         Create a report from a message
 
@@ -151,7 +151,7 @@ class WaterStateGrowcubeReport(GrowcubeReport):
         """
         return self._water_warning
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -168,7 +168,7 @@ class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
     Report moisture, humidity, and temperature for a channel.
 
     :ivar _channel: Channel number 0-3.
-    :type _channel: int
+    :type _channel: Channel
     :ivar _moisture: Moisture value.
     :type _moisture: int
     :ivar _humidity: Humidity value.
@@ -177,7 +177,7 @@ class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
     :type _temperature: int
     """
 
-    def __init__(self, data):
+    def __init__(self, data: str):
         """
         MoistureHumidityStateGrowcubeReport constructor
 
@@ -186,13 +186,13 @@ class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
         """
         GrowcubeReport.__init__(self, 21)
         values = data.split(self.CMD_INNER)
-        self._channel = int(values[0])
+        self._channel = Channel(int(values[0]))
         self._moisture = int(values[1])
         self._humidity = int(values[2])
         self._temperature = int(values[3])
 
     @property
-    def channel(self):
+    def channel(self) -> Channel:
         """
         Channel number 0-3
 
@@ -202,7 +202,7 @@ class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
         return self._channel
 
     @property
-    def moisture(self):
+    def moisture(self) -> int:
         """
         Moisture value
 
@@ -212,7 +212,7 @@ class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
         return self._moisture
 
     @property
-    def humidity(self):
+    def humidity(self) -> int:
         """
         Humidity value
 
@@ -222,7 +222,7 @@ class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
         return self._humidity
 
     @property
-    def temperature(self):
+    def temperature(self) -> int:
         """
         Temperature value
 
@@ -231,14 +231,15 @@ class MoistureHumidityStateGrowcubeReport(GrowcubeReport):
         """
         return self._temperature
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
         :return: A human-readable description of the report.
         :rtype: str
         """
-        return f"{self._command}: channel: {self._channel}, moisture: {self._moisture}, humidity: {self._humidity}, temperature: {self._temperature}"
+        return (f"{self._command}: channel: {self._channel}, moisture: {self._moisture}, humidity: {self._humidity}, "
+                f"temperature: {self._temperature}")
 
 
 class AutoWaterGrowcubeReport(GrowcubeReport):
@@ -248,7 +249,7 @@ class AutoWaterGrowcubeReport(GrowcubeReport):
     Reports a historic watering event.
 
     :ivar _channel: Channel number 0-3.
-    :type _channel: int
+    :type _channel: Channel
     :ivar _year: Year.
     :type _year: int
     :ivar _month: Month.
@@ -264,7 +265,7 @@ class AutoWaterGrowcubeReport(GrowcubeReport):
     :type data: str
     """
 
-    def __init__(self, data):
+    def __init__(self, data: str):
         """
         AutoWaterGrowcubeReport constructor
 
@@ -274,7 +275,7 @@ class AutoWaterGrowcubeReport(GrowcubeReport):
 
         GrowcubeReport.__init__(self, 23)
         parts = data.split(self.CMD_INNER)
-        self._channel = int(parts[0])
+        self._channel = Channel(int(parts[0]))
         self._year = int(parts[1])
         self._month = int(parts[2])
         self._day = int(parts[3])
@@ -282,7 +283,7 @@ class AutoWaterGrowcubeReport(GrowcubeReport):
         self._minute = int(parts[5])
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         """
         Channel number 0-3
 
@@ -351,7 +352,7 @@ class AutoWaterGrowcubeReport(GrowcubeReport):
         """
         return datetime(self._year, self._month, self._day, self._hour, self._minute)
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -371,7 +372,7 @@ class DeviceVersionGrowcubeReport(GrowcubeReport):
     :ivar _device_id: Device ID.
     :type _device_id: str
     """
-    def __init__(self, data):
+    def __init__(self, data: str):
         """
         DeviceVersionGrowcubeReport constructor
 
@@ -422,7 +423,7 @@ class EraseDataGrowcubeReport(GrowcubeReport):
     :ivar _success: Indicates whether the data erasure was successful.
     :type _success: bool
     """
-    def __init__(self, data):
+    def __init__(self, data: str):
         """
         EraseDataGrowcubeReport constructor
 
@@ -442,14 +443,14 @@ class EraseDataGrowcubeReport(GrowcubeReport):
         """
         return self._success
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
         :return: A human-readable description of the report.
         :rtype: str
         """
-        return f"{self._command}: version {self.version}, device_id {self.device_id}"
+        return f"{self._command}: success {self._success}"
 
 
 class PumpOpenGrowcubeReport(GrowcubeReport):
@@ -459,7 +460,7 @@ class PumpOpenGrowcubeReport(GrowcubeReport):
     Reports that a pump has been started
 
     :ivar _channel: Channel number 0-3
-    :type _channel: int
+    :type _channel: Channel
     """
     def __init__(self, data):
         """
@@ -483,9 +484,9 @@ class PumpOpenGrowcubeReport(GrowcubeReport):
 
     def get_description(self):
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: channel {self._channel}"
@@ -497,7 +498,7 @@ class PumpCloseGrowcubeReport(GrowcubeReport):
     Reports that a pump has been stopped
 
     :ivar _channel: Channel number 0-3
-    :type _channel: int
+    :type _channel: Channel
     """
     def __init__(self, data):
         """
@@ -521,9 +522,9 @@ class PumpCloseGrowcubeReport(GrowcubeReport):
 
     def get_description(self):
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: channel {self._channel}"
@@ -552,16 +553,16 @@ class CheckSensorGrowcubeReport(GrowcubeReport):
         """
         Fault state
 
-        :return: True if fault, otherwise False
+        :return: True if faulted, otherwise False
         :rtype: bool
         """
         return self._fault_state
 
     def get_description(self):
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: fault_state {self._fault_state}"
@@ -573,7 +574,7 @@ class CheckPumpBlockedGrowcubeReport(GrowcubeReport):
     Reports that a pump channel is blocked
 
     :ivar _channel: Channel number 0-3
-    :type _channel: int
+    :type _channel: Channel
     """
     def __init__(self, data):
         """
@@ -584,27 +585,27 @@ class CheckPumpBlockedGrowcubeReport(GrowcubeReport):
         """
         GrowcubeReport.__init__(self, 29)
         temp = data.split(self.CMD_INNER)
-        self._channel = int(data[0])
+        self._channel = Channel(int(temp[0]))
         self.data = data
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         """
         Channel
 
         :return: Channel number 0-3
-        :rtype: int
+        :rtype: Channel
         """
         return self._channel
 
     def get_description(self):
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
-        return f"{self._command}: channel {self._channel}, fault_state {self._fault_state}"
+        return f"{self._command}: channel {self._channel}"
 
 
 class CheckSensorNotConnectedGrowcubeReport(GrowcubeReport):
@@ -613,7 +614,7 @@ class CheckSensorNotConnectedGrowcubeReport(GrowcubeReport):
     Reports that a sensor is not connected
 
     :ivar _channel: Channel number 0-3
-    :type _channel: int
+    :type _channel: Channel
     """
     def __init__(self, data):
         """
@@ -631,15 +632,15 @@ class CheckSensorNotConnectedGrowcubeReport(GrowcubeReport):
         State
 
         :return: Channel number 0-3
-        :rtype: int
+        :rtype: Channel
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: channel {self._channel}"
@@ -649,7 +650,7 @@ class CheckSensorNotConnectedGrowcubeReport(GrowcubeReport):
 class CheckWifiStateGrowcubeReport(GrowcubeReport):
     """
     Response 31 - RepWifistate
-    Reports wifi state, probably ony valid when in AP mode, to check if the new WiFi SSID is available
+    Reports WiFi state, probably ony valid when in AP mode, to check if the new WiFi SSID is available
 
     :ivar _state: State
     :type _state: bool
@@ -674,11 +675,11 @@ class CheckWifiStateGrowcubeReport(GrowcubeReport):
         """
         return self._state
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: state {self._state}"
@@ -692,7 +693,7 @@ class GrowCubeIPGrowcubeReport(GrowcubeReport):
     :ivar _ip: IP address
     :type _ip: str
     """
-    def __init__(self, data):
+    def __init__(self, data: str):
         """
         GrowCubeIPGrowcubeReport constructor
 
@@ -714,9 +715,9 @@ class GrowCubeIPGrowcubeReport(GrowcubeReport):
 
     def get_description(self):
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: ip {self._ip}"
@@ -753,9 +754,9 @@ class LockStateGrowcubeReport(GrowcubeReport):
 
     def get_description(self):
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: lock_state {self._lock_state}"
@@ -767,7 +768,7 @@ class CheckSensorLockGrowcubeReport(GrowcubeReport):
     Something related to the lock state of the sensor, I have no idea how to trigger this.
 
     :ivar _channel: Channel number 0-3
-    :type _channel: int
+    :type _channel: Channel
     :ivar _lock_state: Lock state
     :type _lock_state: bool
     """
@@ -780,16 +781,16 @@ class CheckSensorLockGrowcubeReport(GrowcubeReport):
         """
         GrowcubeReport.__init__(self, 34)
         temp = data.split(self.CMD_INNER)
-        self._channel = int(temp[0])
-        self._lock_state = temp[1]
+        self._channel = Channel(int(temp[0]))
+        self._lock_state = temp[1] == '1'
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         """
         Channel number 0-3
 
         :return: Channel number 0-3
-        :rtype: int
+        :rtype: Channel
         """
         return self._channel
 
@@ -805,9 +806,9 @@ class CheckSensorLockGrowcubeReport(GrowcubeReport):
 
     def get_description(self):
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: channel {self._channel} lock_state {self._lock_state}"
@@ -830,7 +831,7 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
         """
         GrowcubeReport.__init__(self, 35)
         temp = data.split(self.CMD_INNER)
-        self._channel = int(data[0])
+        self._channel = int(temp[0])
         self.data = data
 
     @property
@@ -845,9 +846,9 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
 
     def get_description(self):
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: channel {self._channel}"
@@ -871,9 +872,9 @@ class UnknownGrowcubeReport(GrowcubeReport):
 
     def get_description(self):
         """
-        Get a human readable description of the report
+        Get a human-readable description of the report
 
-        :return: A human readable description of the report
+        :return: A human-readable description of the report
         :rtype: str
         """
         return f"{self._command}: data {self.data}"

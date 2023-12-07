@@ -15,6 +15,7 @@ Author: Jonny Bergdahl
 Date: 2023-09-05
 """
 
+
 class GrowcubeClient:
     """
     Growcube client class
@@ -73,7 +74,7 @@ class GrowcubeClient:
         self.connected = False
         self.connection_timeout = 5
 
-    def on_connected(self):
+    def on_connected(self) -> None:
         """
         Callback function for when the connection is established
         """
@@ -82,7 +83,7 @@ class GrowcubeClient:
         if self.on_connected_callback:
             self.on_connected_callback(self.host)
 
-    def on_message(self, message: GrowcubeMessage) -> Callable[[GrowcubeReport], None]:
+    def on_message(self, message: GrowcubeMessage) -> None:
         """
         Callback function for when a message is received from the Growcube
 
@@ -94,9 +95,12 @@ class GrowcubeClient:
         if self.callback:
             self.callback(report)
 
-    def on_connection_lost(self):
+    def on_connection_lost(self) -> None:
         """
         Callback function for when the connection is lost
+
+        :return: None
+        :rtype: None
         """
         logging.debug(f"Connection to {self.host} lost")
         self.connected = False
@@ -113,8 +117,13 @@ class GrowcubeClient:
         try:
             logging.debug("Connecting to %s:%i", self.host, self.port)
             loop = asyncio.get_event_loop()
-            connection_coroutine = loop.create_connection(lambda: GrowcubeProtocol(self.on_connected, self.on_message, self.on_connection_lost), self.host, self.port)
-            self.transport, self.protocol = await asyncio.wait_for(connection_coroutine, timeout=self.connection_timeout)
+            connection_coroutine = loop.create_connection(lambda: GrowcubeProtocol(self.on_connected,
+                                                                                   self.on_message,
+                                                                                   self.on_connection_lost),
+                                                          self.host,
+                                                          self.port)
+            self.transport, self.protocol = await asyncio.wait_for(connection_coroutine,
+                                                                   timeout=self.connection_timeout)
             logging.debug("Connected to %s:%i", self.host, self.port)
             return True
         except ConnectionRefusedError:

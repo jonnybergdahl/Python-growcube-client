@@ -13,14 +13,14 @@ class GrowCubeReportTestCase(unittest.TestCase):
 
     def test_moisture_humidity_state_report(self):
         report = MoistureHumidityStateGrowcubeReport("1@63@62@26")
-        self.assertEqual(1, report.channel)
+        self.assertEqual(Channel.Channel_B, report.channel)
         self.assertEqual(63, report.moisture)
         self.assertEqual(62, report.humidity)
         self.assertEqual(26, report.temperature)
 
     def test_auto_water_report(self):
         report = AutoWaterGrowcubeReport("2@2023@7@13@14@23")
-        self.assertEqual(2, report.channel)
+        self.assertEqual(Channel.Channel_C, report.channel)
         self.assertEqual(2023, report.year)
         self.assertEqual(7, report.month)
         self.assertEqual(13, report.day)
@@ -50,7 +50,7 @@ class GrowCubeReportTestCase(unittest.TestCase):
 
     def test_check_pump_blocked_report(self):
         report = CheckPumpBlockedGrowcubeReport("1")
-        self.assertEqual(1, report.channel)
+        self.assertEqual(Channel.Channel_B, report.channel)
 
     def test_check_sensor_not_connect_report_b(self):
         report = CheckSensorNotConnectedGrowcubeReport("1")

@@ -1,4 +1,6 @@
 import datetime
+from typing import Optional
+
 from .growcubeenums import Channel, WateringMode
 
 """
@@ -80,7 +82,7 @@ class GrowcubeCommand:
     MSG_DEVICE_UPGRADE = "ele504"
     MSG_FACTORY_RESET = "ele505"
 
-    def __init__(self, command: str, message: str):
+    def __init__(self, command: str, message: Optional[str]):
         """
         GrowcubeCommand constructor
 
@@ -89,7 +91,7 @@ class GrowcubeCommand:
         :param message: The message to send.
         :type message: str
         """
-        self.command = command;
+        self.command = command
         self.message = message
 
     def get_message(self) -> str:
@@ -136,9 +138,9 @@ class SetWorkModeCommand(GrowcubeCommand):
 
     def get_description(self) -> str:
         """
-        Get a human readable description of the command
+        Get a human-readable description of the command
 
-        :return: A human readable description of the command
+        :return: A human-readable description of the command
         :rtype: str
         """
         if self.mode == 0:
@@ -218,9 +220,9 @@ class WaterCommand(GrowcubeCommand):
 
     def get_description(self) -> str:
         """
-        Get a human readable description of the command
+        Get a human-readable description of the command
 
-        :return: A human readable description of the command
+        :return: A human-readable description of the command
         :rtype: str
         """
         return f"{self.Command[self.command]}: channel {self.channel}, state {self.state}"
@@ -267,7 +269,7 @@ class WateringModeCommand(GrowcubeCommand):
 class WiFiSettingsCommand(GrowcubeCommand):
     """
     Command 50 - WiFi settings command
-    This setups the WiFi settings for the Growcube
+    Set up the WiFi settings for the Growcube
     """
 
     def __init__(self, ssid: str, password: str):

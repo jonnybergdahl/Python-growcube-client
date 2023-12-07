@@ -3,8 +3,8 @@ import logging
 from typing import (
     Callable,
 )
+
 from .growcubemessage import GrowcubeMessage
-from .growcubereport import GrowcubeReport
 
 """
 Growcube client library
@@ -13,6 +13,7 @@ https://github.com/jonnybergdahl/Python-growcube-client
 Author: Jonny Bergdahl
 Date: 2023-09-05
 """
+
 
 class GrowcubeProtocol(asyncio.Protocol):
     """
@@ -32,7 +33,7 @@ class GrowcubeProtocol(asyncio.Protocol):
     :ivar transport: The transport instance associated with the protocol.
     :type transport: asyncio.Transport or None
     :ivar _data: A buffer to accumulate received data.
-    :type _data: bytes
+    :type _data: bytearray
     :ivar _on_connected: Callback function for connection established event.
     :type _on_connected: Callable[[str], None] or None
     :ivar _on_message: Callback function for message received event.
@@ -40,7 +41,8 @@ class GrowcubeProtocol(asyncio.Protocol):
     :ivar _on_connection_lost: Callback function for connection lost event.
     :type _on_connection_lost: Callable[[], None] or None
     """
-    def __init__(self, on_connected: Callable[[str], None],
+
+    def __init__(self, on_connected: Callable[[], None],
                  on_message: Callable[[str], None],
                  on_connection_lost: Callable[[], None]):
         """
@@ -54,7 +56,7 @@ class GrowcubeProtocol(asyncio.Protocol):
         :type on_connection_lost: Callable[[], None]
         """
         self.transport = None
-        self._data = b""
+        self._data = bytearray()
         self._on_connected = on_connected
         self._on_message = on_message
         self._on_connection_lost = on_connection_lost
@@ -87,7 +89,7 @@ class GrowcubeProtocol(asyncio.Protocol):
         self._data = self._data[new_index:]
 
         if message is not None:
-            logging.debug(f"message: {message._command} - {message.payload}")
+            logging.debug(f"message: {message.command} - {message.payload}")
             if self._on_message:
                 self._on_message(message)
 

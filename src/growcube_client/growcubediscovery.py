@@ -1,7 +1,7 @@
 import asyncio
 import ipaddress
 import logging
-from socket import socket
+import socket
 
 """
 Growcube client library
@@ -87,14 +87,15 @@ class GrowcubeDiscovery:
         else:
             logging.error("Failed to determine the local subnet. Make sure you are connected to a network.")
 
-    def guess_subnet(self) -> ipaddress.IPv4Network:
-        '''
+    @staticmethod
+    def guess_subnet() -> ipaddress.IPv4Network:
+        """
         Guess the local subnet based on the local IP address
         We just assume a /24 network as that is true in 99,999% of the cases
 
         :return: The local subnet
         :rtype: ipaddress.IPv4Network
-        '''
+        """
         # Get local IP address
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.connect(("8.8.8.8", 80))  # Using Google's DNS server address

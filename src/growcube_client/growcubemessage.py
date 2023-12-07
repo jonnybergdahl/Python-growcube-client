@@ -1,4 +1,3 @@
-from typing_extensions import Self
 """
 Growcube client library
 https://github.com/jonnybergdahl/Python-growcube-client
@@ -29,13 +28,12 @@ class GrowcubeMessage:
     :type _data: bytes
     """
 
-
     HEADER = 'elea'
     DELIMITER = '#'
     END_DELIMITER = '#'
     EMPTY_MESSAGE = HEADER + "00" + DELIMITER + DELIMITER + DELIMITER
 
-    def __init__(self, command:int, payload:str, data:bytes):
+    def __init__(self, command: int, payload: str, data: bytes):
         """
         GrowcubeMessage constructor
 
@@ -81,7 +79,7 @@ class GrowcubeMessage:
         return self._data
 
     @staticmethod
-    def from_bytes(data: bytearray) -> (int, Self):
+    def from_bytes(data: bytearray) -> (int, 'GrowcubeMessage'):
         """
         Tries to construct a complete GrowcubeMessage from the data and returns
         the index of the next non-consumed data in the buffer, together with the message.
