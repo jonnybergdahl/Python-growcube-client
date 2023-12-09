@@ -111,9 +111,11 @@ class GrowcubeClient:
         """
         Connect to the Growcube and start listening for data.
 
-        :return: True if the connection was successful, otherwise False.
-        :rtype: bool
+        :return: A tuple. True and an empty string if the connection was successful,
+                otherwise False and the error message.
+        :rtype: Tuple[bool, str]
         """
+        error_message = ""
         try:
             logging.debug("Connecting to %s:%i", self.host, self.port)
             loop = asyncio.get_event_loop()
@@ -127,15 +129,20 @@ class GrowcubeClient:
             logging.debug("Connected to %s:%i", self.host, self.port)
             return True
         except ConnectionRefusedError:
-            logging.error(f"Connection to {self.host} refused")
+            error_message = f"Connection to {self.host}:{self.port} refused"
+            logging.error(error_message)
         except asyncio.CancelledError:
-            logging.info("Client was cancelled. Exiting...")
+            error_message = "Client was cancelled"
+            logging.error(error_message)
         except asyncio.IncompleteReadError:
-            logging.info("Connection closed by server")
+            error_message = "Connection closed by server"
+            logging.error(error_message)
         except asyncio.TimeoutError:
-            logging.error(f"Connection to {self.host} timed out")
+            error_message = f"Connection to {self.host} timed out"
+            logging.error(error_message)
         except Exception as e:
-            logging.error(f"Error {str(e)}")
+            error_message = f"Error {str(e)}"
+            logging.error(error_message)
         return False
 
     def disconnect(self) -> None:
