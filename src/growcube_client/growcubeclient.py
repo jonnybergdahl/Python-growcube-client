@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Callable
+from typing import Callable, Tuple
 from .growcubeenums import Channel
 from .growcubemessage import GrowcubeMessage
 from .growcubereport import GrowcubeReport
@@ -107,7 +107,7 @@ class GrowcubeClient:
         if self.on_disconnected_callback:
             self.on_disconnected_callback(self.host)
 
-    async def connect(self) -> bool:
+    async def connect(self) -> Tuple[bool, str]:
         """
         Connect to the Growcube and start listening for data.
 
@@ -127,7 +127,7 @@ class GrowcubeClient:
             self.transport, self.protocol = await asyncio.wait_for(connection_coroutine,
                                                                    timeout=self.connection_timeout)
             logging.debug("Connected to %s:%i", self.host, self.port)
-            return True
+            return True, ""
         except ConnectionRefusedError:
             error_message = f"Connection to {self.host}:{self.port} refused"
             logging.error(error_message)
@@ -143,7 +143,7 @@ class GrowcubeClient:
         except Exception as e:
             error_message = f"Error {str(e)}"
             logging.error(error_message)
-        return False
+        return False, error_message
 
     def disconnect(self) -> None:
         """

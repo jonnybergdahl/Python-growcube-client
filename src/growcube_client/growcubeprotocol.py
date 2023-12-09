@@ -43,7 +43,7 @@ class GrowcubeProtocol(asyncio.Protocol):
     """
 
     def __init__(self, on_connected: Callable[[], None],
-                 on_message: Callable[[str], None],
+                 on_message: Callable[[GrowcubeMessage], None],
                  on_connection_lost: Callable[[], None]):
         """
         Initializes a new instance of the GrowcubeProtocol.
@@ -51,7 +51,7 @@ class GrowcubeProtocol(asyncio.Protocol):
         :param on_connected: A callback function to be executed when the connection is established.
         :type on_connected: Callable[[str], None]
         :param on_message: A callback function to be executed when a message is received.
-        :type on_message: Callable[[str], None]
+        :type on_message: Callable[[GrowcubeMessage], None]
         :param on_connection_lost: A callback function to be executed when the connection is lost.
         :type on_connection_lost: Callable[[], None]
         """

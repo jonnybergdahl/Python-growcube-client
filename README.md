@@ -5,7 +5,7 @@
 [![PyPI license](https://img.shields.io/pypi/l/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 
 This is an asyncio Python library to communicate with 
-[Elecrow Growcube](https://www.elecrow.com/growcube-gardening-plants-smart-watering-kit-device.html) devices.
+[Elecrow GrowCube](https://www.elecrow.com/growcube-gardening-plants-smart-watering-kit-device.html) devices.
 By using this library you can communicate directly with the device, without the need to use the phone app.
 
 Once connected to a device, the library will listen for messages from the device and use a callback function
