@@ -13,12 +13,13 @@ sphinx-build -b html docs html
 rm -r ~/Developer/jonnybergdahl/jonnybergdahl.github.io/growcube-client/*
 cp html/*.html ~/Developer/jonnybergdahl/jonnybergdahl.github.io/growcube-client
 cp -r html/_static ~/Developer/jonnybergdahl/jonnybergdahl.github.io/growcube-client/_static
-cp -r assets/ ~/Developer/jonnybergdahl/jonnybergdahl.github.io/growcube-client/_images
+cp -r assets/ ~/Developer/jonnybergdahl/jonnybergdahl.github.io/growcube-client/assets
 touch ~/Developer/jonnybergdahl/jonnybergdahl.github.io/growcube-client/.nojekyll
 
 # Commit and push docs
 pushd ~/Developer/jonnybergdahl/jonnybergdahl.github.io
 git checkout main
+git pull
 git add growcube-client
 if [ -n "$(git status --porcelain)" ]; then
   git commit -m "Update growcube-client docs"

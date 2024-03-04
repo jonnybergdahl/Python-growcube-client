@@ -109,4 +109,9 @@ class GrowcubeProtocol(asyncio.Protocol):
         :param exc: An exception indicating the reason for the connection loss.
         :type exc: Exception
         """
-        print("Connection lost.")
+        logging.debug(f"Connection lost, reason: {exc}")
+        if self._on_connection_lost:
+            self._on_connection_lost()
+
+
+

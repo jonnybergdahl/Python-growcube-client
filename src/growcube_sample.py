@@ -1,4 +1,6 @@
 import asyncio
+import logging
+
 from growcube_client import GrowcubeReport, GrowcubeClient
 
 
@@ -9,6 +11,8 @@ def callback(report: GrowcubeReport) -> None:
 
 
 async def main(host: str) -> None:
+    logging.basicConfig(level=logging.DEBUG)
+
     # Create a client instance
     client = GrowcubeClient(host, callback)
     print(f"Connecting to Growcube at {HOST}")
@@ -21,6 +25,6 @@ async def main(host: str) -> None:
 
 if __name__ == "__main__":
     # Set host name or IP address
-    HOST = "172.30.2.71"
+    HOST = "172.30.2.70"
 
     asyncio.run(main(HOST))

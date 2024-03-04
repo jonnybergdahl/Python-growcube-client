@@ -1,5 +1,8 @@
 import concurrent
+import datetime
 import queue
+import time
+
 import wx
 import threading
 import asyncio
@@ -277,10 +280,14 @@ class SimpleGUI(wx.Frame):
                     self.client.send_command(command)
                 elif isinstance(command, WaterCommand):
                     await self.client.water_plant(command.channel, command.duration)
+            if self.client.connected and time.time() - self.client.heartbeat > 10:
+                logging.debug("Heartbeat timeout");
+                self.client.disconnect();
             await asyncio.sleep(1)
 
     def start_async_client_thread(self, host_name):
-        self.client = GrowcubeClient(host_name, self.update_data, on_connected_callback=self.on_connected,
+        self.client = GrowcubeClient(host_name, self.update_data,
+                                     on_connected_callback=self.on_connected,
                                      on_disconnected_callback=self.on_disconnected,
                                      log_level=DEBUG_LEVEL)
         self.exit_background_thread = False
@@ -320,15 +327,15 @@ class SimpleGUI(wx.Frame):
             self.version = data.version
             self.device_id = data.device_id
         elif isinstance(data, MoistureHumidityStateGrowcubeReport):
-            if data.channel == 0:
+            if data.channel == Channel.Channel_A:
                 self.humidity = data.humidity
                 self.temperature = data.temperature
                 self.moisture_a = data.moisture
-            elif data.channel == 1:
+            elif data.channel == Channel.Channel_B:
                 self.moisture_b = data.moisture
-            elif data.channel == 2:
+            elif data.channel == Channel.Channel_C:
                 self.moisture_c = data.moisture
-            elif data.channel == 3:
+            elif data.channel == Channel.Channel_D:
                 self.moisture_d = data.moisture
         elif isinstance(data, LockStateGrowcubeReport):
             self.lock_state = data.lock_state

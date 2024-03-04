@@ -1,10 +1,11 @@
 import asyncio
+import datetime, time
 import logging
 from typing import Callable, Tuple
 from .growcubeenums import Channel
 from .growcubemessage import GrowcubeMessage
 from .growcubereport import GrowcubeReport
-from .growcubecommand import GrowcubeCommand, WaterCommand
+from .growcubecommand import GrowcubeCommand, WaterCommand, SetWorkModeCommand
 from .growcubeprotocol import GrowcubeProtocol
 
 """
@@ -24,12 +25,12 @@ class GrowcubeClient:
     :type host: str
     :ivar port: The port number for the connection. (Default: 8800)
     :type port: int
-    :ivar callback: Callback function to receive data from the Growcube.
-    :type callback: Callable[[GrowcubeReport], None]
-    :ivar on_connected_callback: Callback function for when the connection is established.
-    :type on_connected_callback: Callable[[str], None] or None
-    :ivar on_disconnected_callback: Callback function for when the connection is lost.
-    :type on_disconnected_callback: Callable[[str], None] or None
+    :ivar _callback: Callback function to receive data from the Growcube.
+    :type _callback: Callable[[GrowcubeReport], None]
+    :ivar _on_connected_callback: Callback function for when the connection is established.
+    :type _on_connected_callback: Callable[[str], None] or None
+    :ivar _on_disconnected_callback: Callback function for when the connection is lost.
+    :type _on_disconnected_callback: Callable[[str], None] or None
     :ivar log_level: Logging level. (Default: logging.INFO)
     :type log_level: int
     :ivar _exit: Internal flag indicating if the client is exiting.
@@ -47,8 +48,11 @@ class GrowcubeClient:
     """
     host: str
 
-    def __init__(self, host: str, callback: Callable[[GrowcubeReport], None],
-                 on_connected_callback: Callable[[str], None] = None,
+    def __init__(self,
+                 host: str,
+                 callback: Callable[[GrowcubeReport], None],
+                 on_connected_callback:
+                 Callable[[str], None] = None,
                  on_disconnected_callback: Callable[[str], None] = None,
                  log_level: int = logging.INFO) -> None:
         """
@@ -63,9 +67,9 @@ class GrowcubeClient:
         """
         self.host = host
         self.port = 8800
-        self.callback = callback
-        self.on_connected_callback = on_connected_callback
-        self.on_disconnected_callback = on_disconnected_callback
+        self._callback = callback
+        self._on_connected_callback = on_connected_callback
+        self._on_disconnected_callback = on_disconnected_callback
         self.log_level = log_level
         self._exit = False
         self._data = b''
@@ -73,6 +77,7 @@ class GrowcubeClient:
         self.protocol = None
         self.connected = False
         self.connection_timeout = 5
+        self.heartbeat = datetime.datetime.now().timestamp()
 
     def on_connected(self) -> None:
         """
@@ -80,8 +85,8 @@ class GrowcubeClient:
         """
         self.connected = True
         logging.debug(f"Connected to {self.host}")
-        if self.on_connected_callback:
-            self.on_connected_callback(self.host)
+        if self._on_connected_callback:
+            self._on_connected_callback(self.host)
 
     def on_message(self, message: GrowcubeMessage) -> None:
         """
@@ -92,8 +97,9 @@ class GrowcubeClient:
         """
         report = GrowcubeReport.get_report(message)
         logging.debug(f"< {report.get_description()}")
-        if self.callback:
-            self.callback(report)
+        self.heartbeat = datetime.datetime.now().timestamp()
+        if self._callback:
+            self._callback(report)
 
     def on_connection_lost(self) -> None:
         """
@@ -104,8 +110,16 @@ class GrowcubeClient:
         """
         logging.debug(f"Connection to {self.host} lost")
         self.connected = False
-        if self.on_disconnected_callback:
-            self.on_disconnected_callback(self.host)
+        if self._on_disconnected_callback:
+            self._on_disconnected_callback(self.host)
+
+        while not self.connected:
+            time.sleep(5)
+            logging.debug(f"Retrying connection to {self.host}")
+            loop = asyncio.get_event_loop()
+            result, error = loop.run_until_complete(self.connect())
+            if result:
+                logging.debug(f"Connection re-established")
 
     async def connect(self) -> Tuple[bool, str]:
         """
@@ -127,6 +141,7 @@ class GrowcubeClient:
             self.transport, self.protocol = await asyncio.wait_for(connection_coroutine,
                                                                    timeout=self.connection_timeout)
             logging.debug("Connected to %s:%i", self.host, self.port)
+            await asyncio.create_task(self.send_keep_alive(interval=10))
             return True, ""
         except ConnectionRefusedError:
             error_message = f"Connection to {self.host}:{self.port} refused"
@@ -154,6 +169,7 @@ class GrowcubeClient:
         logging.info("Disconnecting")
         if self.transport:
             self.transport.close()
+        self.connected = False
 
     def send_command(self, command: GrowcubeCommand) -> bool:
         """
@@ -175,6 +191,18 @@ class GrowcubeClient:
             logging.error(f"send_command Exception {str(e)}")
             return False
         return True
+
+    async def send_keep_alive(self, interval: int) -> None:
+        """
+        Send a keep alive, we are using the SetWorkModeCommand for this
+
+        :param interval: How often to send keep alive message
+        :type interval: int
+        :return: None
+        """
+        while self.connected:
+            self.send_command(SetWorkModeCommand(1))
+            await asyncio.sleep(interval)
 
     async def water_plant(self, channel: Channel, duration: int) -> bool:
         """

@@ -75,14 +75,19 @@ class GrowcubeDiscovery:
         self._devices = []
         if local_subnet:
             logging.debug(f"Scanning devices in local subnet: {local_subnet}")
-            tasks = [self.discover_device(str(ip)) for ip in local_subnet.hosts()]
 
             # Run the tasks concurrently
             # Set the maximum number of concurrent tasks
-            max_concurrent_tasks = 5
+            max_concurrent_tasks = 20
             semaphore = asyncio.Semaphore(max_concurrent_tasks)
-            async with semaphore:
-                await asyncio.gather(*tasks)
+
+            async def discover_with_limit(ip):
+                async with semaphore:
+                    await self.discover_device(str(ip))
+
+            tasks = [discover_with_limit(str(ip)) for ip in local_subnet.hosts()]
+
+            await asyncio.gather(*tasks)
             return self._devices
         else:
             logging.error("Failed to determine the local subnet. Make sure you are connected to a network.")
