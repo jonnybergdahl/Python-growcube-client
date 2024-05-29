@@ -139,7 +139,7 @@ class WaterStateGrowcubeReport(GrowcubeReport):
         :type data: str
         """
         GrowcubeReport.__init__(self, 20)
-        self._water_warning = int(data) != 0
+        self._water_warning = int(data) != 1
 
     @property
     def water_warning(self) -> bool:
@@ -765,7 +765,7 @@ class LockStateGrowcubeReport(GrowcubeReport):
 class CheckSensorLockGrowcubeReport(GrowcubeReport):
     """
     Response 34 - ReqCheckSenSorLock
-    Something related to the lock state of the sensor, I have no idea how to trigger this.
+    Lock state of the sensor, triggered by a sensor fault.
 
     :ivar _channel: Channel number 0-3
     :type _channel: Channel
@@ -780,9 +780,8 @@ class CheckSensorLockGrowcubeReport(GrowcubeReport):
         :type data: str
         """
         GrowcubeReport.__init__(self, 34)
-        temp = data.split(self.CMD_INNER)
-        self._channel = Channel(int(temp[0]))
-        self._lock_state = temp[1] == '1'
+        self._channel = Channel(int(data))
+        self._lock_state = True
 
     @property
     def channel(self) -> Channel:
@@ -831,7 +830,7 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
         """
         GrowcubeReport.__init__(self, 35)
         temp = data.split(self.CMD_INNER)
-        self._channel = int(temp[0])
+        self._channel = Channel(int(temp[0]))
         self.data = data
 
     @property

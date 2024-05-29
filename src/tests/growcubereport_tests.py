@@ -4,11 +4,11 @@ from growcube_client import *
 
 class GrowCubeReportTestCase(unittest.TestCase):
     def test_water_state_report_false(self):
-        report = WaterStateGrowcubeReport('0')
+        report = WaterStateGrowcubeReport('1')
         self.assertEqual(report.water_warning, False)
 
     def test_water_state_report_true(self):
-        report = WaterStateGrowcubeReport('1')
+        report = WaterStateGrowcubeReport('0')
         self.assertEqual(report.water_warning, True)
 
     def test_moisture_humidity_state_report(self):

@@ -141,7 +141,7 @@ class GrowcubeClient:
             self.transport, self.protocol = await asyncio.wait_for(connection_coroutine,
                                                                    timeout=self.connection_timeout)
             logging.debug("Connected to %s:%i", self.host, self.port)
-            await asyncio.create_task(self.send_keep_alive(interval=10))
+            # await asyncio.create_task(self.send_keep_alive(interval=10))
             return True, ""
         except ConnectionRefusedError:
             error_message = f"Connection to {self.host}:{self.port} refused"
