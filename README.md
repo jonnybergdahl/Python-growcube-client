@@ -17,6 +17,10 @@ to return parsed messages to the application. The application can also send comm
 pip install growcube-client
 ```
 
+## Documentation
+
+The full library documentation can be [found here](https://jonnybergdahl.github.io/growcube-client/).
+
 ## Getting started
 
 The `src/growcube_sample.py` file shows how to use the library. It defines a callback function where the GrowcubeClient
