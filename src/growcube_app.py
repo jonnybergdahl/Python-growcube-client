@@ -82,7 +82,7 @@ class SimpleGUI(wx.Frame):
             asyncio.set_event_loop(self.loop)
 
         # Set the window size
-        self.SetSize((1024, 1024))
+        self.SetSize((1024, 800))
 
         panel = wx.Panel(self)
 
