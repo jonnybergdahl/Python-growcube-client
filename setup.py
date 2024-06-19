@@ -11,7 +11,7 @@ with open(path.join(HERE, 'DESCRIPTION.md'), encoding='utf-8') as f:
 
 setup(
     name='growcube-client',
-    version='1.0.15',
+    version='1.0.16',
     description='A client for Elecrow GrowCube plant watering devices',
     long_description=long_description,
     long_description_content_type="text/markdown",
