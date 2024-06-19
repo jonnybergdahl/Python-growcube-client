@@ -9,9 +9,9 @@ import asyncio
 import logging
 from growcube_client import GrowcubeClient, Channel, GrowcubeCommand, PumpOpenGrowcubeReport, PumpCloseGrowcubeReport, \
     SyncWaterLevelCommand, SyncWaterTimeCommand, SetWorkModeCommand
-from growcube_client import (DeviceVersionGrowcubeReport, LockStateGrowcubeReport, CheckSensorGrowcubeReport,
-                             MoistureHumidityStateGrowcubeReport, WaterStateGrowcubeReport,
-                             CheckSensorNotConnectedGrowcubeReport, CheckSensorLockGrowcubeReport)
+from growcube_client import DeviceVersionGrowcubeReport, LockStateGrowcubeReport, CheckSensorGrowcubeReport, \
+                             MoistureHumidityStateGrowcubeReport, WaterStateGrowcubeReport, \
+                             CheckSensorNotConnectedGrowcubeReport,  CheckOutletLockGrowcubeReport
 
 DEBUG_LEVEL = logging.DEBUG
 
@@ -51,21 +51,23 @@ class SimpleGUI(wx.Frame):
         self.moisture_c = 0
         self.moisture_d = 0
         self.lock_state = False
-        self.sensor_state = False
+        self.sensor_state_a = False
+        self.sensor_state_b = False
+        self.sensor_state_c = False
+        self.sensor_state_d = False
         self.water_state = False
         self.sensor_connected_a = False
         self.sensor_connected_b = False
         self.sensor_connected_c = False
         self.sensor_connected_d = False
-        self.check_sensor_a = False
-        self.check_sensor_b = False
-        self.check_sensor_c = False
-        self.check_sensor_d = False
         self.pump_state_a = False
         self.pump_state_b = False
         self.pump_state_c = False
         self.pump_state_d = False
-
+        self.outlet_lock_a = False
+        self.outlet_lock_b = False
+        self.outlet_lock_c = False
+        self.outlet_lock_d = False
         self.client = None
         self.client_thread = None
         self.loop = None
@@ -80,7 +82,7 @@ class SimpleGUI(wx.Frame):
             asyncio.set_event_loop(self.loop)
 
         # Set the window size
-        self.SetSize((1024, 768))
+        self.SetSize((1024, 1024))
 
         panel = wx.Panel(self)
 
@@ -117,7 +119,7 @@ class SimpleGUI(wx.Frame):
         # Data row 2
         row2_sizer = wx.BoxSizer(wx.HORIZONTAL)
         label1 = wx.StaticText(panel, label=f"Device ID")
-        self.device_id_text = wx.StaticText(panel, label="")
+        self.device_id_text = wx.StaticText(panel, label="-")
         label2 = wx.StaticText(panel, label="Temperature")
         self.temperature_text = wx.StaticText(panel, label="-° C")  # You can set initial values here
         row2_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
@@ -129,122 +131,146 @@ class SimpleGUI(wx.Frame):
         # Data row 3
         row3_sizer = wx.BoxSizer(wx.HORIZONTAL)
         label1 = wx.StaticText(panel, label=f"Version")
-        self.version_text = wx.StaticText(panel, label="OK")
-        label2 = wx.StaticText(panel, label="Moisture A")
-        self.moisture_a_text = wx.StaticText(panel, label="- %")  # You can set initial values here
+        self.version_text = wx.StaticText(panel, label="-")
+        label2 = wx.StaticText(panel, label=f"Lock state:")
+        self.lock_state_text = wx.StaticText(panel, label="OK")
         row3_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
         row3_sizer.Add(self.version_text, 1, wx.EXPAND | wx.ALL, 5)
         row3_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row3_sizer.Add(self.moisture_a_text, 1, wx.EXPAND | wx.ALL, 5)
+        row3_sizer.Add(self.lock_state_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row3_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 4
         row4_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(panel, label=f"Lock state:")
-        self.lock_state_text = wx.StaticText(panel, label="OK")
-        label2 = wx.StaticText(panel, label="Moisture B:")
-        self.moisture_b_text = wx.StaticText(panel, label="- %")  # You can set initial values here
+        label1 = wx.StaticText(panel, label=f"Water state:")
+        self.water_state_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label=f"")
+        label3 = wx.StaticText(panel, label=f"")
         row4_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row4_sizer.Add(self.lock_state_text, 1, wx.EXPAND | wx.ALL, 5)
+        row4_sizer.Add(self.water_state_text, 1, wx.EXPAND | wx.ALL, 5)
         row4_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row4_sizer.Add(self.moisture_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        row4_sizer.Add(label3, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row4_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 5
         row5_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(panel, label=f"Sensor state:")
-        self.sensor_state_text = wx.StaticText(panel, label="OK")
-        label2 = wx.StaticText(panel, label="Moisture C:")
-        self.moisture_c_text = wx.StaticText(panel, label="- %")  # You can set initial values here
+        label1 = wx.StaticText(panel, label="Moisture A")
+        self.moisture_a_text = wx.StaticText(panel, label="- %")  # You can set initial values here
+        label2 = wx.StaticText(panel, label="Moisture B:")
+        self.moisture_b_text = wx.StaticText(panel, label="- %")  # You can set initial values here
         row5_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row5_sizer.Add(self.sensor_state_text, 1, wx.EXPAND | wx.ALL, 5)
+        row5_sizer.Add(self.moisture_a_text, 1, wx.EXPAND | wx.ALL, 5)
         row5_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row5_sizer.Add(self.moisture_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        row5_sizer.Add(self.moisture_b_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row5_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 6
         row6_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(panel, label=f"Water state:")
-        self.water_state_text = wx.StaticText(panel, label="OK")
+        label1 = wx.StaticText(panel, label="Moisture C:")
+        self.moisture_c_text = wx.StaticText(panel, label="- %")  # You can set initial values here
         label2 = wx.StaticText(panel, label="Moisture D:")
         self.moisture_d_text = wx.StaticText(panel, label="- %")  # You can set initial values here
         row6_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row6_sizer.Add(self.water_state_text, 1, wx.EXPAND | wx.ALL, 5)
+        row6_sizer.Add(self.moisture_c_text, 1, wx.EXPAND | wx.ALL, 5)
         row6_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
         row6_sizer.Add(self.moisture_d_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row6_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 7
         row7_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(panel, label=f"Sensor A connected:")
-        self.sensor_connected_a_text = wx.StaticText(panel, label="OK")
-        label2 = wx.StaticText(panel, label="Pump state A:")
-        self.pump_state_a_text = wx.StaticText(panel, label="Off")
+        label1 = wx.StaticText(panel, label="Pump state A:")
+        self.pump_state_a_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Pump state B:")
+        self.pump_state_b_text = wx.StaticText(panel, label="OK")
         row7_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row7_sizer.Add(self.sensor_connected_a_text, 1, wx.EXPAND | wx.ALL, 5)
-        row7_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
         row7_sizer.Add(self.pump_state_a_text, 1, wx.EXPAND | wx.ALL, 5)
+        row7_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row7_sizer.Add(self.pump_state_b_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row7_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 8
         row8_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(panel, label=f"Sensor B connected:")
-        self.sensor_connected_b_text = wx.StaticText(panel, label="OK")
-        label2 = wx.StaticText(panel, label="Pump state B:")
-        self.pump_state_b_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        label1 = wx.StaticText(panel, label="Pump state C:")
+        self.pump_state_c_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Pump state D:")
+        self.pump_state_d_text = wx.StaticText(panel, label="OK")
         row8_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row8_sizer.Add(self.sensor_connected_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        row8_sizer.Add(self.pump_state_c_text, 1, wx.EXPAND | wx.ALL, 5)
         row8_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row8_sizer.Add(self.pump_state_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        row8_sizer.Add(self.pump_state_d_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row8_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 9
         row9_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(panel, label=f"Sensor C connected:")
-        self.sensor_connected_c_text = wx.StaticText(panel, label="OK")
-        label2 = wx.StaticText(panel, label="Pump state C:")
-        self.pump_state_c_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        label1 = wx.StaticText(panel, label=f"Sensor A connected:")
+        self.sensor_connected_a_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label=f"Sensor B connected:")
+        self.sensor_connected_b_text = wx.StaticText(panel, label="OK")
         row9_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row9_sizer.Add(self.sensor_connected_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        row9_sizer.Add(self.sensor_connected_a_text, 1, wx.EXPAND | wx.ALL, 5)
         row9_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row9_sizer.Add(self.pump_state_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        row9_sizer.Add(self.sensor_connected_b_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row9_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 10
         row10_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(panel, label=f"Sensor D connected:")
+        label1 = wx.StaticText(panel, label=f"Sensor C connected:")
+        self.sensor_connected_c_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label=f"Sensor D connected:")
         self.sensor_connected_d_text = wx.StaticText(panel, label="OK")
-        label2 = wx.StaticText(panel, label="Pump state D:")
-        self.pump_state_d_text = wx.StaticText(panel, label="OK")  # You can set initial values here
         row10_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row10_sizer.Add(self.sensor_connected_d_text, 1, wx.EXPAND | wx.ALL, 5)
+        row10_sizer.Add(self.sensor_connected_c_text, 1, wx.EXPAND | wx.ALL, 5)
         row10_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row10_sizer.Add(self.pump_state_d_text, 1, wx.EXPAND | wx.ALL, 5)
+        row10_sizer.Add(self.sensor_connected_d_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row10_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 11
         row11_sizer = wx.BoxSizer(wx.HORIZONTAL)
         label1 = wx.StaticText(panel, label=f"Sensor A fault:")
-        self.check_sensor_a_text = wx.StaticText(panel, label="OK")
+        self.sensor_state_a_text = wx.StaticText(panel, label="OK")
         label2 = wx.StaticText(panel, label="Sensor B fault:")
-        self.check_sensor_b_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        self.sensor_state_b_text = wx.StaticText(panel, label="OK")  # You can set initial values here
         row11_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row11_sizer.Add(self.check_sensor_a_text, 1, wx.EXPAND | wx.ALL, 5)
+        row11_sizer.Add(self.sensor_state_a_text, 1, wx.EXPAND | wx.ALL, 5)
         row11_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row11_sizer.Add(self.check_sensor_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        row11_sizer.Add(self.sensor_state_b_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row11_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 12
         row12_sizer = wx.BoxSizer(wx.HORIZONTAL)
         label1 = wx.StaticText(panel, label=f"Sensor C fault:")
-        self.check_sensor_c_text = wx.StaticText(panel, label="OK")
+        self.sensor_state_c_text = wx.StaticText(panel, label="OK")
         label2 = wx.StaticText(panel, label="Sensor D fault:")
-        self.check_sensor_d_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        self.sensor_state_d_text = wx.StaticText(panel, label="OK")  # You can set initial values here
         row12_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row12_sizer.Add(self.check_sensor_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        row12_sizer.Add(self.sensor_state_c_text, 1, wx.EXPAND | wx.ALL, 5)
         row12_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row12_sizer.Add(self.check_sensor_d_text, 1, wx.EXPAND | wx.ALL, 5)
+        row12_sizer.Add(self.sensor_state_d_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row12_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 13
+        row13_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Outlet A lock:")
+        self.outlet_lock_a_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Outlet B lock:")
+        self.outlet_lock_b_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        row13_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row13_sizer.Add(self.outlet_lock_a_text, 1, wx.EXPAND | wx.ALL, 5)
+        row13_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row13_sizer.Add(self.outlet_lock_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row13_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 14
+        row14_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Outlet C lock:")
+        self.outlet_lock_c_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Outlet D lock:")
+        self.outlet_lock_d_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        row14_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row14_sizer.Add(self.outlet_lock_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        row14_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row14_sizer.Add(self.outlet_lock_d_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row14_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         group_box3 = wx.StaticBox(panel, label="Watering")
         group_box_sizer3 = wx.StaticBoxSizer(group_box3, wx.VERTICAL)
@@ -270,7 +296,7 @@ class SimpleGUI(wx.Frame):
         # Third group box
         group_box4 = wx.StaticBox(panel, label="Log")
         group_box_sizer4 = wx.StaticBoxSizer(group_box4, wx.VERTICAL)
-        self.log_text = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(wx.DefaultSize[0], 8 * 22))
+        self.log_text = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(wx.DefaultSize[0], 12 * 22))
         group_box_sizer4.Add(self.log_text, 1, wx.EXPAND | wx.ALL, 8)
 
         # Add group boxes to main sizer
@@ -368,7 +394,14 @@ class SimpleGUI(wx.Frame):
         elif isinstance(data, LockStateGrowcubeReport):
             self.lock_state = data.lock_state
         elif isinstance(data, CheckSensorGrowcubeReport):
-            self.sensor_state = data.fault_state
+            if data.channel == Channel.Channel_A:
+                self.sensor_state_a = True
+            elif data.channel == Channel.Channel_B:
+                self.sensor_state_b = True
+            elif data.channel == Channel.Channel_C:
+                self.sensor_state_c = True
+            elif data.channel == Channel.Channel_D:
+                self.sensor_state_d = True
         elif isinstance(data, CheckSensorNotConnectedGrowcubeReport):
             if data.channel == Channel.Channel_A:
                 self.sensor_connected_a = True
@@ -378,15 +411,15 @@ class SimpleGUI(wx.Frame):
                 self.sensor_connected_c = True
             elif data.channel == Channel.Channel_D:
                 self.sensor_connected_d = True
-        elif isinstance(data, CheckSensorLockGrowcubeReport):
+        elif isinstance(data, CheckOutletLockGrowcubeReport):
             if data.channel == Channel.Channel_A:
-                self.check_sensor_a = data.lock_state
+                self.outlet_lock_a = True
             elif data.channel == Channel.Channel_B:
-                self.check_sensor_b = data.lock_state
+                self.outlet_lock_b = True
             elif data.channel == Channel.Channel_C:
-                self.check_sensor_c = data.lock_state
+                self.outlet_lock_c = True
             elif data.channel == Channel.Channel_D:
-                self.check_sensor_d = data.lock_state
+                self.outlet_lock_d = True
         elif isinstance(data, WaterStateGrowcubeReport):
             self.water_state = data.water_warning
         elif isinstance(data, PumpOpenGrowcubeReport):
@@ -440,16 +473,19 @@ class SimpleGUI(wx.Frame):
         self.moisture_c_text.SetLabel(f"{self.moisture_c} %")
         self.moisture_d_text.SetLabel(f"{self.moisture_d} %")
         self.lock_state_text.SetLabel('OK' if not self.lock_state else 'Locked')
-        self.sensor_state_text.SetLabel('OK' if not self.sensor_state else 'Check sensors')
         self.water_state_text.SetLabel('OK' if not self.water_state else 'Water warning')
         self.sensor_connected_a_text.SetLabel('OK' if not self.sensor_connected_a else 'Failed')
         self.sensor_connected_b_text.SetLabel('OK' if not self.sensor_connected_b else 'Failed')
         self.sensor_connected_c_text.SetLabel('OK' if not self.sensor_connected_b else 'Failed')
         self.sensor_connected_d_text.SetLabel('OK' if not self.sensor_connected_b else 'Failed')
-        self.check_sensor_a_text.SetLabel('OK' if not self.check_sensor_a else 'Check')
-        self.check_sensor_b_text.SetLabel('OK' if not self.check_sensor_b else 'Check')
-        self.check_sensor_c_text.SetLabel('OK' if not self.check_sensor_c else 'Check')
-        self.check_sensor_d_text.SetLabel('OK' if not self.check_sensor_d else 'Check')
+        self.sensor_state_a_text.SetLabel('OK' if not self.sensor_state_a else 'Check')
+        self.sensor_state_b_text.SetLabel('OK' if not self.sensor_state_b else 'Check')
+        self.sensor_state_c_text.SetLabel('OK' if not self.sensor_state_c else 'Check')
+        self.sensor_state_d_text.SetLabel('OK' if not self.sensor_state_d else 'Check')
+        self.outlet_lock_a_text.SetLabel('OK' if not self.outlet_lock_a else 'Locked')
+        self.outlet_lock_b_text.SetLabel('OK' if not self.outlet_lock_b else 'Locked')
+        self.outlet_lock_c_text.SetLabel('OK' if not self.outlet_lock_c else 'Locked')
+        self.outlet_lock_b_text.SetLabel('OK' if not self.outlet_lock_d else 'Locked')
         self.pump_state_a_text.SetLabel('On' if self.pump_state_a else 'Off')
         self.pump_state_b_text.SetLabel('On' if self.pump_state_b else 'Off')
         self.pump_state_c_text.SetLabel('On' if self.pump_state_c else 'Off')

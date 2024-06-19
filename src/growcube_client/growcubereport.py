@@ -114,7 +114,7 @@ class GrowcubeReport:
         elif message.command == 33:
             return LockStateGrowcubeReport(message.payload)
         elif message.command == 34:
-            return CheckSensorLockGrowcubeReport(message.payload)
+            return CheckOutletLockGrowcubeReport(message.payload)
         elif message.command == 35:
             return RepCurveEndFlagGrowcubeReport(message.payload)
         else:
@@ -762,26 +762,23 @@ class LockStateGrowcubeReport(GrowcubeReport):
         return f"{self._command}: lock_state {self._lock_state}"
 
 
-class CheckSensorLockGrowcubeReport(GrowcubeReport):
+class CheckOutletLockGrowcubeReport(GrowcubeReport):
     """
     Response 34 - ReqCheckSenSorLock
     Lock state of the sensor, triggered by a sensor fault.
 
     :ivar _channel: Channel number 0-3
     :type _channel: Channel
-    :ivar _lock_state: Lock state
-    :type _lock_state: bool
     """
     def __init__(self, data):
         """
-        CheckSensorLockGrowcubeReport constructor
+        CheckOutletLockGrowcubeReport constructor
 
         :param data: Response data.
         :type data: str
         """
         GrowcubeReport.__init__(self, 34)
         self._channel = Channel(int(data))
-        self._lock_state = True
 
     @property
     def channel(self) -> Channel:
@@ -793,16 +790,6 @@ class CheckSensorLockGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    @property
-    def lock_state(self) -> bool:
-        """
-        Lock state
-
-        :return: True if locked, otherwise False
-        :rtype: bool
-        """
-        return self._lock_state
-
     def get_description(self):
         """
         Get a human-readable description of the report
@@ -810,7 +797,7 @@ class CheckSensorLockGrowcubeReport(GrowcubeReport):
         :return: A human-readable description of the report
         :rtype: str
         """
-        return f"{self._command}: channel {self._channel} lock_state {self._lock_state}"
+        return f"{self._command}: channel {self._channel}"
 
 
 class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
