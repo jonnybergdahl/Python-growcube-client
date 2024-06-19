@@ -113,14 +113,6 @@ class GrowcubeClient:
         if self._on_disconnected_callback:
             self._on_disconnected_callback(self.host)
 
-        while not self.connected:
-            time.sleep(5)
-            logging.debug(f"Retrying connection to {self.host}")
-            loop = asyncio.get_event_loop()
-            result, error = loop.run_until_complete(self.connect())
-            if result:
-                logging.debug(f"Connection re-established")
-
     async def connect(self) -> Tuple[bool, str]:
         """
         Connect to the Growcube and start listening for data.

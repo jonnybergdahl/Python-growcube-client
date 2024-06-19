@@ -535,8 +535,8 @@ class CheckSensorGrowcubeReport(GrowcubeReport):
     Response 28 - RepCheckSenSorNotConnected
     Reports that a sensor is malfunctioning
 
-    :ivar _fault_state: Fault state
-    :type _fault_state: bool
+    :ivar _channel: Channel number 0-3
+    :type _channel: Channel
     """
     def __init__(self, data):
         """
@@ -546,17 +546,17 @@ class CheckSensorGrowcubeReport(GrowcubeReport):
         :type data: str
         """
         GrowcubeReport.__init__(self, 28)
-        self._fault_state = data == "1"
+        self._channel = Channel(int(data))
 
     @property
-    def fault_state(self) -> bool:
+    def channel(self) -> Channel:
         """
-        Fault state
+        Channel
 
-        :return: True if faulted, otherwise False
-        :rtype: bool
+        :return: Channel number 0-3
+        :rtype: int
         """
-        return self._fault_state
+        return self._channel
 
     def get_description(self):
         """
@@ -565,7 +565,7 @@ class CheckSensorGrowcubeReport(GrowcubeReport):
         :return: A human-readable description of the report
         :rtype: str
         """
-        return f"{self._command}: fault_state {self._fault_state}"
+        return f"{self._command}: channel {self._channel}"
 
 
 class CheckPumpBlockedGrowcubeReport(GrowcubeReport):
