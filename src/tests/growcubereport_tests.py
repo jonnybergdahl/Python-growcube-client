@@ -45,8 +45,8 @@ class GrowCubeReportTestCase(unittest.TestCase):
         self.assertEqual(Channel.Channel_B, report.channel)
 
     def test_check_sensor_report(self):
-        report = CheckSensorGrowcubeReport("1")
-        self.assertTrue(report._fault_state)
+        report = CheckSensorGrowcubeReport("2")
+        self.assertEqual(Channel.Channel_C, report.channel)
 
     def test_check_pump_blocked_report(self):
         report = CheckPumpBlockedGrowcubeReport("1")
@@ -75,6 +75,10 @@ class GrowCubeReportTestCase(unittest.TestCase):
     def test_lockstate_report_true(self):
         report = LockStateGrowcubeReport("1@1")
         self.assertTrue(report._lock_state)
+
+    def test_outlet_lock_report(self):
+        report = CheckOutletLockGrowcubeReport("2")
+        self.assertEqual(Channel.Channel_C, report.channel)
 
     def test_unknown_report(self):
         report = UnknownGrowcubeReport("99", "1@2@3")
