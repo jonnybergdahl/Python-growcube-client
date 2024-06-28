@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from growcube_client import GrowcubeReport, GrowcubeClient
+from growcube_client import GrowcubeReport, GrowcubeClient, DeviceVersionGrowcubeReport, SetWorkModeCommand
 
 
 # Define a callback function to print messages to the screen

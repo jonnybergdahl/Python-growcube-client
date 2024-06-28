@@ -33,7 +33,7 @@ class GrowcubeReport:
         25: "RepErasureDataCmd",
         26: "RepPumpOpenCmd",
         27: "RepPumpCloseCmd",
-        28: "RepCheckSenSorNotConnectedCmd",
+        28: "RepCheckSenSorCmd",
         29: "RepCheckDuZhuanCmd",
         30: "RepCheckSenSorNotConnectCmd",
         31: "RepWifistateCmd",
@@ -104,7 +104,7 @@ class GrowcubeReport:
         elif message.command == 28:
             return CheckSensorGrowcubeReport(message.payload)
         elif message.command == 29:
-            return CheckPumpBlockedGrowcubeReport(message.payload)
+            return CheckOutletBlockedGrowcubeReport(message.payload)
         elif message.command == 30:
             return CheckSensorNotConnectedGrowcubeReport(message.payload)
         elif message.command == 31:
@@ -114,7 +114,7 @@ class GrowcubeReport:
         elif message.command == 33:
             return LockStateGrowcubeReport(message.payload)
         elif message.command == 34:
-            return CheckOutletLockGrowcubeReport(message.payload)
+            return CheckOutletLockedGrowcubeReport(message.payload)
         elif message.command == 35:
             return RepCurveEndFlagGrowcubeReport(message.payload)
         else:
@@ -568,7 +568,7 @@ class CheckSensorGrowcubeReport(GrowcubeReport):
         return f"{self._command}: channel {self._channel}"
 
 
-class CheckPumpBlockedGrowcubeReport(GrowcubeReport):
+class CheckOutletBlockedGrowcubeReport(GrowcubeReport):
     """
     Response 29 - Pump channel blocked
     Reports that a pump channel is blocked
@@ -578,7 +578,7 @@ class CheckPumpBlockedGrowcubeReport(GrowcubeReport):
     """
     def __init__(self, data):
         """
-        CheckPumpBlockGrowcubeReport constructor
+        CheckOutletBlockedGrowcubeReport constructor
 
         :params data: Response data
         :type data: str
@@ -762,7 +762,7 @@ class LockStateGrowcubeReport(GrowcubeReport):
         return f"{self._command}: lock_state {self._lock_state}"
 
 
-class CheckOutletLockGrowcubeReport(GrowcubeReport):
+class CheckOutletLockedGrowcubeReport(GrowcubeReport):
     """
     Response 34 - ReqCheckSenSorLock
     Lock state of the sensor, triggered by a sensor fault.
@@ -806,7 +806,7 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
     Reports the end of the water event reports stream
 
     :ivar _channel: Channel number 0-3
-    :type _channel: int
+    :type _channel: Channel
     """
     def __init__(self, data):
         """
@@ -826,7 +826,7 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
         Channel number 0-3
 
         :return: Channel number 0-3
-        :rtype: int
+        :rtype: Channel
         """
         return self._channel
 

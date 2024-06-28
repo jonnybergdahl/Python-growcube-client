@@ -116,3 +116,18 @@ Found 2 devices:
 Found device: 172.30.2.71
 Found device: 172.30.2.70
 ```
+
+## Important device states
+
+Report class | Use
+--- | ---
+WaterStateGrowcubeReport | Water warning
+MoistureHumidityStateGrowcubeReport | Moisture, humidity and temperature, reported per channel. _Note: Humidity and temperature is the same for all 4_
+DeviceVersionGrowcubeReport | Device id and firmware version
+PumpOpenGrowcubeReport | Pump outlet is open for channel
+PumpCloseGrowcubeReport | Pump outlet is closed for channel
+CheckSensorGrowcubeReport | Sensor not connected for channel
+CheckPumpBlockedGrowcubeReport | Pump outlet is blocked for channel
+CheckSensorNotConnectedGrowcubeReport | Sensor is not connected for channel
+LockStateGrowcubeReport | Device is in locked mode
+CheckOutletLockGrowcubeReport | Pump outlet is locked for channel

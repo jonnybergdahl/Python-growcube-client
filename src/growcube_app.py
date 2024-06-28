@@ -9,9 +9,10 @@ import asyncio
 import logging
 from growcube_client import GrowcubeClient, Channel, GrowcubeCommand, PumpOpenGrowcubeReport, PumpCloseGrowcubeReport, \
     SyncWaterLevelCommand, SyncWaterTimeCommand, SetWorkModeCommand
-from growcube_client import DeviceVersionGrowcubeReport, LockStateGrowcubeReport, CheckSensorGrowcubeReport, \
+from growcube_client import (DeviceVersionGrowcubeReport, LockStateGrowcubeReport, CheckSensorGrowcubeReport, \
                              MoistureHumidityStateGrowcubeReport, WaterStateGrowcubeReport, \
-                             CheckSensorNotConnectedGrowcubeReport,  CheckOutletLockGrowcubeReport
+                             CheckSensorNotConnectedGrowcubeReport,  CheckOutletLockedGrowcubeReport, \
+                             CheckOutletBlockedGrowcubeReport)
 
 DEBUG_LEVEL = logging.DEBUG
 
@@ -64,10 +65,14 @@ class SimpleGUI(wx.Frame):
         self.pump_state_b = False
         self.pump_state_c = False
         self.pump_state_d = False
-        self.outlet_lock_a = False
-        self.outlet_lock_b = False
-        self.outlet_lock_c = False
-        self.outlet_lock_d = False
+        self.outlet_locked_a = False
+        self.outlet_locked_b = False
+        self.outlet_locked_c = False
+        self.outlet_locked_d = False
+        self.outlet_blocked_a = False
+        self.outlet_blocked_b = False
+        self.outlet_blocked_c = False
+        self.outlet_blocked_d = False
         self.client = None
         self.client_thread = None
         self.loop = None
@@ -82,7 +87,7 @@ class SimpleGUI(wx.Frame):
             asyncio.set_event_loop(self.loop)
 
         # Set the window size
-        self.SetSize((1024, 800))
+        self.SetSize((1024, 1024))
 
         panel = wx.Panel(self)
 
@@ -250,27 +255,51 @@ class SimpleGUI(wx.Frame):
 
         # Data row 13
         row13_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(panel, label=f"Outlet A lock:")
-        self.outlet_lock_a_text = wx.StaticText(panel, label="OK")
-        label2 = wx.StaticText(panel, label="Outlet B lock:")
-        self.outlet_lock_b_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        label1 = wx.StaticText(panel, label=f"Outlet A locked:")
+        self.outlet_locked_a_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Outlet B locked:")
+        self.outlet_locked_b_text = wx.StaticText(panel, label="OK")  # You can set initial values here
         row13_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row13_sizer.Add(self.outlet_lock_a_text, 1, wx.EXPAND | wx.ALL, 5)
+        row13_sizer.Add(self.outlet_locked_a_text, 1, wx.EXPAND | wx.ALL, 5)
         row13_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row13_sizer.Add(self.outlet_lock_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        row13_sizer.Add(self.outlet_locked_b_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row13_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         # Data row 14
         row14_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label1 = wx.StaticText(panel, label=f"Outlet C lock:")
-        self.outlet_lock_c_text = wx.StaticText(panel, label="OK")
-        label2 = wx.StaticText(panel, label="Outlet D lock:")
-        self.outlet_lock_d_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        label1 = wx.StaticText(panel, label=f"Outlet C locked:")
+        self.outlet_locked_c_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Outlet D locked:")
+        self.outlet_locked_d_text = wx.StaticText(panel, label="OK")  # You can set initial values here
         row14_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
-        row14_sizer.Add(self.outlet_lock_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        row14_sizer.Add(self.outlet_locked_c_text, 1, wx.EXPAND | wx.ALL, 5)
         row14_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
-        row14_sizer.Add(self.outlet_lock_d_text, 1, wx.EXPAND | wx.ALL, 5)
+        row14_sizer.Add(self.outlet_locked_d_text, 1, wx.EXPAND | wx.ALL, 5)
         group_box_sizer2.Add(row14_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 15
+        row15_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Outlet A blocked:")
+        self.outlet_blocked_a_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Outlet B blocked:")
+        self.outlet_blocked_b_text = wx.StaticText(panel, label="OK")  # You can set initial values here
+        row15_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row15_sizer.Add(self.outlet_blocked_a_text, 1, wx.EXPAND | wx.ALL, 5)
+        row15_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row15_sizer.Add(self.outlet_blocked_b_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row15_sizer, 0, wx.EXPAND | wx.ALL, 0)
+
+        # Data row 16
+        row16_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label1 = wx.StaticText(panel, label=f"Outlet C blocked:")
+        self.outlet_blocked_c_text = wx.StaticText(panel, label="OK")
+        label2 = wx.StaticText(panel, label="Outlet D blocked:")
+        self.outlet_blocked_d_text = wx.StaticText(panel, label="OK")
+        row16_sizer.Add(label1, 1, wx.EXPAND | wx.ALL, 5)
+        row16_sizer.Add(self.outlet_blocked_c_text, 1, wx.EXPAND | wx.ALL, 5)
+        row16_sizer.Add(label2, 1, wx.EXPAND | wx.ALL, 5)
+        row16_sizer.Add(self.outlet_blocked_d_text, 1, wx.EXPAND | wx.ALL, 5)
+        group_box_sizer2.Add(row16_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         group_box3 = wx.StaticBox(panel, label="Watering")
         group_box_sizer3 = wx.StaticBoxSizer(group_box3, wx.VERTICAL)
@@ -411,15 +440,24 @@ class SimpleGUI(wx.Frame):
                 self.sensor_connected_c = True
             elif data.channel == Channel.Channel_D:
                 self.sensor_connected_d = True
-        elif isinstance(data, CheckOutletLockGrowcubeReport):
+        elif isinstance(data, CheckOutletLockedGrowcubeReport):
             if data.channel == Channel.Channel_A:
-                self.outlet_lock_a = True
+                self.outlet_locked_a = True
             elif data.channel == Channel.Channel_B:
-                self.outlet_lock_b = True
+                self.outlet_locked_b = True
             elif data.channel == Channel.Channel_C:
-                self.outlet_lock_c = True
+                self.outlet_locked_c = True
             elif data.channel == Channel.Channel_D:
-                self.outlet_lock_d = True
+                self.outlet_locked_d = True
+        elif isinstance(data, CheckOutletBlockedGrowcubeReport):
+            if data.channel == Channel.Channel_A:
+                self.outlet_blocked_a = True
+            elif data.channel == Channel.Channel_B:
+                self.outlet_blocked_b = True
+            elif data.channel == Channel.Channel_C:
+                self.outlet_blocked_c = True
+            elif data.channel == Channel.Channel_D:
+                self.outlet_blocked_d = True
         elif isinstance(data, WaterStateGrowcubeReport):
             self.water_state = data.water_warning
         elif isinstance(data, PumpOpenGrowcubeReport):
@@ -476,16 +514,16 @@ class SimpleGUI(wx.Frame):
         self.water_state_text.SetLabel('OK' if not self.water_state else 'Water warning')
         self.sensor_connected_a_text.SetLabel('OK' if not self.sensor_connected_a else 'Failed')
         self.sensor_connected_b_text.SetLabel('OK' if not self.sensor_connected_b else 'Failed')
-        self.sensor_connected_c_text.SetLabel('OK' if not self.sensor_connected_b else 'Failed')
-        self.sensor_connected_d_text.SetLabel('OK' if not self.sensor_connected_b else 'Failed')
+        self.sensor_connected_c_text.SetLabel('OK' if not self.sensor_connected_c else 'Failed')
+        self.sensor_connected_d_text.SetLabel('OK' if not self.sensor_connected_d else 'Failed')
         self.sensor_state_a_text.SetLabel('OK' if not self.sensor_state_a else 'Check')
         self.sensor_state_b_text.SetLabel('OK' if not self.sensor_state_b else 'Check')
         self.sensor_state_c_text.SetLabel('OK' if not self.sensor_state_c else 'Check')
         self.sensor_state_d_text.SetLabel('OK' if not self.sensor_state_d else 'Check')
-        self.outlet_lock_a_text.SetLabel('OK' if not self.outlet_lock_a else 'Locked')
-        self.outlet_lock_b_text.SetLabel('OK' if not self.outlet_lock_b else 'Locked')
-        self.outlet_lock_c_text.SetLabel('OK' if not self.outlet_lock_c else 'Locked')
-        self.outlet_lock_b_text.SetLabel('OK' if not self.outlet_lock_d else 'Locked')
+        self.outlet_locked_a_text.SetLabel('OK' if not self.outlet_locked_a else 'Locked')
+        self.outlet_locked_b_text.SetLabel('OK' if not self.outlet_locked_b else 'Locked')
+        self.outlet_locked_c_text.SetLabel('OK' if not self.outlet_locked_c else 'Locked')
+        self.outlet_locked_b_text.SetLabel('OK' if not self.outlet_locked_d else 'Locked')
         self.pump_state_a_text.SetLabel('On' if self.pump_state_a else 'Off')
         self.pump_state_b_text.SetLabel('On' if self.pump_state_b else 'Off')
         self.pump_state_c_text.SetLabel('On' if self.pump_state_c else 'Off')
