@@ -1,7 +1,8 @@
 import asyncio
 import datetime, time
+import inspect
 import logging
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Awaitable
 from .growcubeenums import Channel
 from .growcubemessage import GrowcubeMessage
 from .growcubereport import GrowcubeReport
@@ -50,10 +51,9 @@ class GrowcubeClient:
 
     def __init__(self,
                  host: str,
-                 callback: Callable[[GrowcubeReport], None],
-                 on_connected_callback:
-                 Callable[[str], None] = None,
-                 on_disconnected_callback: Callable[[str], None] = None,
+                 callback: Callable[[GrowcubeReport], Awaitable[None]],
+                 on_connected_callback: Callable[[str], Awaitable[None]] = None,
+                 on_disconnected_callback: Callable[[str], Awaitable[None]] = None,
                  log_level: int = logging.INFO) -> None:
         """
         GrowcubeClient constructor
@@ -86,7 +86,10 @@ class GrowcubeClient:
         self.connected = True
         logging.debug(f"Connected to {self.host}")
         if self._on_connected_callback:
-            self._on_connected_callback(self.host)
+            if inspect.iscoroutinefunction(self._on_connected_callback):
+                asyncio.create_task(self._on_connected_callback(self.host))
+            else:
+                self._on_connected_callback(self.host)
 
     def on_message(self, message: GrowcubeMessage) -> None:
         """
@@ -99,7 +102,10 @@ class GrowcubeClient:
         logging.debug(f"< {report.get_description()}")
         self.heartbeat = datetime.datetime.now().timestamp()
         if self._callback:
-            self._callback(report)
+            if inspect.iscoroutinefunction(self._callback):
+                asyncio.create_task(self._callback(report))
+            else:
+                self._callback(report)
 
     def on_connection_lost(self) -> None:
         """
@@ -111,7 +117,10 @@ class GrowcubeClient:
         logging.debug(f"Connection to {self.host} lost")
         self.connected = False
         if self._on_disconnected_callback:
-            self._on_disconnected_callback(self.host)
+            if inspect.iscoroutinefunction(self._on_disconnected_callback):
+                asyncio.create_task(self._on_disconnected_callback(self.host))
+            else:
+                self._on_disconnected_callback(self.host)
 
     async def connect(self) -> Tuple[bool, str]:
         """
