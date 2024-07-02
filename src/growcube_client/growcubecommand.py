@@ -250,7 +250,7 @@ class WateringModeCommand(GrowcubeCommand):
     This sets the watering mode for the given channel
     """
 
-    def __init__(self, channel: Channel, watering_mode: WateringMode, min_value: int, max_value: int):
+    def __init__(self, channel: Channel, watering_mode: WateringMode, value1: int, value2: int):
         """
         WaterModeCommand constructor
 
@@ -258,12 +258,13 @@ class WateringModeCommand(GrowcubeCommand):
         :type channel: Channel
         :param watering_mode: Mode
         :type watering_mode: WateringMode
-        :param min_value: Min value
-        :type min_value: int
-        :param max_value: Max value
-        :type max_value: int
+        :param value1: Manual mode: Duration (s), Smart mode: Min. moisture
+        :type value1: int
+        :param value2: Manual mode: Interval (h), Smart mode: Max. moisture
+        :type value2: int
         """
-        super().__init__(self.CMD_WATER_MODE, f"{str(channel.value)}@{watering_mode.value}@{min_value}@{max_value}")
+        value1 = str(value1) if not watering_mode == WateringMode.Scheduled else str(value1) + "s"
+        super().__init__(self.CMD_WATER_MODE, f"{str(channel.value)}@{watering_mode.value}@{value1}@{value2}")
 
 
 class WiFiSettingsCommand(GrowcubeCommand):
