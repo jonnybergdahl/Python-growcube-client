@@ -38,6 +38,6 @@ class WateringMode(Enum):
     :cvar Scheduled: Scheduled watering
     :vartype Scheduled: int
     """
-    Smart: int = 1
+    Scheduled: int = 1
     SmartOutside: int = 2
-    Scheduled: int = 3
+    Smart: int = 3
