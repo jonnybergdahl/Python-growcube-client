@@ -60,6 +60,9 @@ class GrowcubeProtocol(asyncio.Protocol):
         self._on_connected = on_connected
         self._on_message = on_message
         self._on_connection_lost = on_connection_lost
+        self._loop = asyncio.get_event_loop()
+        self._timeout_handle = None
+        self._timeout = 30
 
     def connection_made(self, transport):
         """
@@ -72,6 +75,7 @@ class GrowcubeProtocol(asyncio.Protocol):
         logging.info("Connection established.")
         if self._on_connected:
             self._on_connected()
+        self._reset_timeout()
 
     def data_received(self, data):
         """
@@ -80,6 +84,7 @@ class GrowcubeProtocol(asyncio.Protocol):
         :param data: The received data.
         :type data: bytes
         """
+        self._reset_timeout()
         # Remove all b'\x00' characters, used for padding
         data = bytearray(filter(lambda c: c != 0, data))
         # add the data to the message buffer
@@ -101,8 +106,9 @@ class GrowcubeProtocol(asyncio.Protocol):
         :type message: bytes
         """
         self.transport.write(message)
+        self._reset_timeout()
 
-    def connection_lost(self, exc):
+    def connection_lost(self, exc: Exception) -> None:
         """
         Called when the connection is lost.
 
@@ -110,8 +116,22 @@ class GrowcubeProtocol(asyncio.Protocol):
         :type exc: Exception
         """
         logging.debug(f"Connection lost, reason: {exc}")
+        if self._timeout_handle:
+            self._timeout_handle.cancel()
         if self._on_connection_lost:
             self._on_connection_lost()
 
+    def _reset_timeout(self) -> None:
+        """
+        Resets the timeout
+        """
+        if self._timeout_handle:
+            self._timeout_handle.cancel()
+        self._timeout_handle = self._loop.call_later(self._timeout, self._check_timeout)
 
+    def _check_timeout(self) -> None:
+        logging.debug("Connection timed out.")
+        self.transport.close()
+        if self._on_connection_lost:
+            self._on_connection_lost()
 
