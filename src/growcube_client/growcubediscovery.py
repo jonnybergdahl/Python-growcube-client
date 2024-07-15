@@ -50,13 +50,15 @@ class GrowcubeDiscovery:
             # Attempt to connect to port self.PORT with a timeout of 5 seconds
             print(f"Trying to connect to {ip_address}")
             _, writer = await asyncio.wait_for(asyncio.open_connection(ip_address, self.PORT), timeout=5)
-            logging.debug(f"Device discovered at {ip_address}:777")
+            logging.debug(f"Device discovered at {ip_address}:{self.PORT}")
             writer.close()
             await writer.wait_closed()
             self._devices.append(ip_address)
             return True
         except (asyncio.TimeoutError, ConnectionRefusedError):
             # Timeout or connection refused, device is not discovered
+            return False
+        except Exception as e:
             return False
 
     async def discover_devices_in_local_subnet(self, subnet: ipaddress.IPv4Network = None) -> list[str]:
