@@ -10,6 +10,14 @@ def callback(report: GrowcubeReport) -> None:
     print(f"Received: {report.get_description()}")
 
 
+def on_connected(self, host):
+    print(f"Connected to {host}")
+
+
+def on_disconnected(self, host):
+    print(f"Disconnected from {host}")
+
+
 async def main(host: str) -> None:
     logging.basicConfig(level=logging.DEBUG)
 

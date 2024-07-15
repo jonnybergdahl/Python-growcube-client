@@ -131,7 +131,5 @@ class GrowcubeProtocol(asyncio.Protocol):
 
     def _check_timeout(self) -> None:
         logging.debug("Connection timed out.")
-        self.transport.close()
-        if self._on_connection_lost:
-            self._on_connection_lost()
+        self.transport.abort()
 
