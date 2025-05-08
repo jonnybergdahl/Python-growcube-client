@@ -77,7 +77,7 @@ class GrowCubeReportTestCase(unittest.TestCase):
         self.assertTrue(report._lock_state)
 
     def test_outlet_lock_report(self):
-        report = CheckOutletLockGrowcubeReport("2")
+        report = CheckOutletLockedGrowcubeReport("2")
         self.assertEqual(Channel.Channel_C, report.channel)
 
     def test_unknown_report(self):

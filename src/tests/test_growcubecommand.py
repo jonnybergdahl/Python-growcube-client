@@ -64,8 +64,8 @@ class GrowCubeCommandTestCase(unittest.TestCase):
     def test_watering_mode_command_smart(self):
         command = WateringModeCommand(Channel.Channel_B, WateringMode.Smart, 2, 3)
         self.assertEqual(GrowcubeCommand.CMD_WATER_MODE, command.command)
-        self.assertEqual("0@1@2@3", command.message)
-        self.assertEqual("elea49#7#0@1@2@3#", command.get_message())
+        self.assertEqual("1@3@2@3", command.message)
+        self.assertEqual("elea49#7#1@3@2@3#", command.get_message())
 
     def test_watering_mode_command_smart_outside(self):
         command = WateringModeCommand(Channel.Channel_B, WateringMode.SmartOutside, 2, 3)
@@ -73,11 +73,11 @@ class GrowCubeCommandTestCase(unittest.TestCase):
         self.assertEqual("1@2@2@3", command.message)
         self.assertEqual("elea49#7#1@2@2@3#", command.get_message())
 
-    def test_watering_mode_command_smart(self):
+    def test_watering_mode_command_scheduled(self):
         command = WateringModeCommand(Channel.Channel_A, WateringMode.Scheduled, 2, 3)
         self.assertEqual(GrowcubeCommand.CMD_WATER_MODE, command.command)
-        self.assertEqual("0@3@2@3", command.message)
-        self.assertEqual("elea49#7#0@3@2@3#", command.get_message())
+        self.assertEqual("0@1@2s@3", command.message)
+        self.assertEqual("elea49#8#0@1@2s@3#", command.get_message())
 
     def test_wifi_settings_command(self):
         command = WiFiSettingsCommand("SSID", "PWD")
