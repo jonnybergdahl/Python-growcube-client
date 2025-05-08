@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from growcube_client import Channel
+from .growcubeenums import Channel
 
 """
 Growcube client library
@@ -688,7 +688,9 @@ class CheckWifiStateGrowcubeReport(GrowcubeReport):
 class GrowCubeIPGrowcubeReport(GrowcubeReport):
     """
     Response 32 - RepGrowCubeIP
-    Reports the IP address of the Growcube, I have no idea how to trigger this
+    Reports the IP address of the Growcube. This report is likely sent by the device
+    after a network configuration change or during the initial connection process.
+    It provides the current IP address assigned to the device.
 
     :ivar _ip: IP address
     :type _ip: str

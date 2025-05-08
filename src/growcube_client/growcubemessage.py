@@ -6,7 +6,7 @@ Author: Jonny Bergdahl
 Date: 2023-09-05
 """
 
-from typing import Union
+from typing import Union, Tuple, Optional
 
 
 class GrowcubeMessage:
@@ -81,7 +81,7 @@ class GrowcubeMessage:
         return self._data
 
     @staticmethod
-    def from_bytes(data: bytearray) -> Union[tuple[int, 'GrowcubeMessage'], tuple[int, None]]:
+    def from_bytes(data: bytearray) -> Union[Tuple[int, 'GrowcubeMessage'], Tuple[int, None]]:
         """
         Tries to construct a complete GrowcubeMessage from the data and returns
         the index of the next non-consumed data in the buffer, together with the message.
@@ -91,7 +91,7 @@ class GrowcubeMessage:
         :type data: bytearray
         :return: The index of the next non-consumed data in the buffer, together with the message,
                  or the next found start index and None if the message is incomplete.
-        :rtype: tuple[int, GrowcubeMessage] or tuple[int, None]
+        :rtype: Tuple[int, GrowcubeMessage] or Tuple[int, None]
         """
         message_str = data.decode('ascii')
 

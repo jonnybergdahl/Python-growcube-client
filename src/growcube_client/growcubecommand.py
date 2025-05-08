@@ -288,7 +288,10 @@ class WiFiSettingsCommand(GrowcubeCommand):
 class SyncWaterLevelCommand(GrowcubeCommand):
     """
     Command 502 - Sync water level
-    No idea what this does
+
+    This command is likely used to synchronize the water level information with the device.
+    It may be used to update the device's internal water level tracking or to request
+    the current water level status.
     """
 
     def __init__(self):
@@ -301,7 +304,10 @@ class SyncWaterLevelCommand(GrowcubeCommand):
 class SyncWaterTimeCommand(GrowcubeCommand):
     """
     Command 503 - Sync water time
-    No idea what this does
+
+    This command is likely used to synchronize watering schedule times with the device.
+    It may be used to update the device's internal watering schedule or to request
+    the current watering schedule information.
     """
 
     def __init__(self):
