@@ -482,7 +482,7 @@ class PumpOpenGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -520,7 +520,7 @@ class PumpCloseGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -558,7 +558,7 @@ class CheckSensorGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -598,7 +598,7 @@ class CheckOutletBlockedGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -713,7 +713,7 @@ class GrowCubeIPGrowcubeReport(GrowcubeReport):
         """
         return self._ip
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -752,7 +752,7 @@ class LockStateGrowcubeReport(GrowcubeReport):
         """
         return self._lock_state
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -790,7 +790,7 @@ class CheckOutletLockedGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -821,7 +821,7 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
         self.data = data
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         """
         Channel number 0-3
 
@@ -830,7 +830,7 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -856,7 +856,7 @@ class UnknownGrowcubeReport(GrowcubeReport):
         temp = data.split(self.CMD_INNER)
         self.data = ", ".join(temp)
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 

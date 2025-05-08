@@ -6,6 +6,8 @@ Author: Jonny Bergdahl
 Date: 2023-09-05
 """
 
+from typing import Union
+
 
 class GrowcubeMessage:
     """
@@ -49,7 +51,7 @@ class GrowcubeMessage:
         self._data = data
 
     @property
-    def command(self):
+    def command(self) -> int:
         """
         Command value
 
@@ -59,7 +61,7 @@ class GrowcubeMessage:
         return self._command
 
     @property
-    def payload(self):
+    def payload(self) -> str:
         """
         Message payload
 
@@ -79,7 +81,7 @@ class GrowcubeMessage:
         return self._data
 
     @staticmethod
-    def from_bytes(data: bytearray) -> (int, 'GrowcubeMessage'):
+    def from_bytes(data: bytearray) -> Union[tuple[int, 'GrowcubeMessage'], tuple[int, None]]:
         """
         Tries to construct a complete GrowcubeMessage from the data and returns
         the index of the next non-consumed data in the buffer, together with the message.
