@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from growcube_client import Channel
+from .growcubeenums import Channel
 
 """
 Growcube client library
@@ -54,7 +54,7 @@ class GrowcubeReport:
         if command in self.Response:
             self._command = self.Response[command]
         else:
-            self._command = f"Unknown: {command}"
+            self._command = f"Unknown response: {command}"
 
     @property
     def command(self) -> str:
@@ -482,7 +482,7 @@ class PumpOpenGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -520,7 +520,7 @@ class PumpCloseGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -558,7 +558,7 @@ class CheckSensorGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -598,7 +598,7 @@ class CheckOutletBlockedGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -650,7 +650,7 @@ class CheckSensorNotConnectedGrowcubeReport(GrowcubeReport):
 class CheckWifiStateGrowcubeReport(GrowcubeReport):
     """
     Response 31 - RepWifistate
-    Reports WiFi state, probably ony valid when in AP mode, to check if the new WiFi SSID is available
+    Reports WiFi state, probably only valid when in AP mode, to check if the new WiFi SSID is available
 
     :ivar _state: State
     :type _state: bool
@@ -663,7 +663,7 @@ class CheckWifiStateGrowcubeReport(GrowcubeReport):
         :type data: str
         """
         GrowcubeReport.__init__(self, 31)
-        self._state = data == "1"
+        self._state = data != "1"
 
     @property
     def state(self) -> bool:
@@ -688,7 +688,9 @@ class CheckWifiStateGrowcubeReport(GrowcubeReport):
 class GrowCubeIPGrowcubeReport(GrowcubeReport):
     """
     Response 32 - RepGrowCubeIP
-    Reports the IP address of the Growcube, I have no idea how to trigger this
+    Reports the IP address of the Growcube. This report is likely sent by the device
+    after a network configuration change or during the initial connection process.
+    It provides the current IP address assigned to the device.
 
     :ivar _ip: IP address
     :type _ip: str
@@ -713,7 +715,7 @@ class GrowCubeIPGrowcubeReport(GrowcubeReport):
         """
         return self._ip
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -752,7 +754,7 @@ class LockStateGrowcubeReport(GrowcubeReport):
         """
         return self._lock_state
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -790,7 +792,7 @@ class CheckOutletLockedGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -821,7 +823,7 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
         self.data = data
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         """
         Channel number 0-3
 
@@ -830,7 +832,7 @@ class RepCurveEndFlagGrowcubeReport(GrowcubeReport):
         """
         return self._channel
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 
@@ -856,7 +858,7 @@ class UnknownGrowcubeReport(GrowcubeReport):
         temp = data.split(self.CMD_INNER)
         self.data = ", ".join(temp)
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get a human-readable description of the report
 

@@ -1,4 +1,5 @@
 import unittest
+import re
 from datetime import datetime, date, time
 from growcube_client import GrowcubeCommand, WateringMode, Channel
 from growcube_client import SetWorkModeCommand
@@ -13,6 +14,7 @@ from growcube_client import SyncWaterLevelCommand
 from growcube_client import SyncWaterTimeCommand
 from growcube_client import SyncDeviceUpgradeCommand
 from growcube_client import SyncWFactoryResetCommand
+from growcube_client.growcubeenums import WorkMode
 
 
 class GrowCubeCommandTestCase(unittest.TestCase):
@@ -23,7 +25,7 @@ class GrowCubeCommandTestCase(unittest.TestCase):
         self.assertEqual("elea44#7#payload#", command.get_message())
 
     def test_set_work_mode(self):
-        command = SetWorkModeCommand(2)
+        command = SetWorkModeCommand(WorkMode.Network)
         self.assertEqual(GrowcubeCommand.CMD_SET_WORK_MODE, command.command)
         self.assertEqual("2", command.message)
         self.assertEqual("elea43#1#2#", command.get_message())
@@ -64,8 +66,8 @@ class GrowCubeCommandTestCase(unittest.TestCase):
     def test_watering_mode_command_smart(self):
         command = WateringModeCommand(Channel.Channel_B, WateringMode.Smart, 2, 3)
         self.assertEqual(GrowcubeCommand.CMD_WATER_MODE, command.command)
-        self.assertEqual("0@1@2@3", command.message)
-        self.assertEqual("elea49#7#0@1@2@3#", command.get_message())
+        self.assertEqual("1@3@2@3", command.message)
+        self.assertEqual("elea49#7#1@3@2@3#", command.get_message())
 
     def test_watering_mode_command_smart_outside(self):
         command = WateringModeCommand(Channel.Channel_B, WateringMode.SmartOutside, 2, 3)
@@ -73,17 +75,21 @@ class GrowCubeCommandTestCase(unittest.TestCase):
         self.assertEqual("1@2@2@3", command.message)
         self.assertEqual("elea49#7#1@2@2@3#", command.get_message())
 
-    def test_watering_mode_command_smart(self):
+    def test_watering_mode_command_scheduled(self):
         command = WateringModeCommand(Channel.Channel_A, WateringMode.Scheduled, 2, 3)
         self.assertEqual(GrowcubeCommand.CMD_WATER_MODE, command.command)
-        self.assertEqual("0@3@2@3", command.message)
-        self.assertEqual("elea49#7#0@3@2@3#", command.get_message())
+        self.assertEqual("0@1@2s@3", command.message)
+        self.assertEqual("elea49#8#0@1@2s@3#", command.get_message())
 
     def test_wifi_settings_command(self):
-        command = WiFiSettingsCommand("SSID", "PWD")
+        command = WiFiSettingsCommand("SSID", "Password")
         self.assertEqual(GrowcubeCommand.CMD_WIFI_SETTINGS, command.command)
-        self.assertEqual("SSID@PWD", command.message)
-        self.assertEqual("elea50#8#SSID@PWD#", command.get_message())
+        self.assertEqual(None, command.message)
+        msg = command.get_message()
+        self.assertTrue(msg.startswith("elea50]*26]*SSID}'Password}'"),f"prefix wrong: {msg!r}")
+        self.assertTrue(msg.endswith("]*"), f"suffix wrong: {msg!r}")
+        ts = re.search(r"SSID\}'Password\}'(\d+)\]\*$", msg).group(1)
+        self.assertTrue(ts.isdigit(), f"timestamp not numeric: {ts!r}")
 
     def test_sync_water_level_command(self):
         command = SyncWaterLevelCommand()

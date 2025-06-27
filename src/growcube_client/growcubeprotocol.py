@@ -64,7 +64,7 @@ class GrowcubeProtocol(asyncio.Protocol):
         self._timeout_handle = None
         self._timeout = 30
 
-    def connection_made(self, transport):
+    def connection_made(self, transport) -> None:
         """
         Called when a connection is made.
 
@@ -77,7 +77,7 @@ class GrowcubeProtocol(asyncio.Protocol):
             self._on_connected()
         self._reset_timeout()
 
-    def data_received(self, data):
+    def data_received(self, data) -> None:
         """
         Called when data is received.
 
@@ -132,4 +132,3 @@ class GrowcubeProtocol(asyncio.Protocol):
     def _check_timeout(self) -> None:
         logging.debug("Connection timed out.")
         self.transport.abort()
-
