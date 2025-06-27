@@ -62,7 +62,7 @@ class GrowCubeReportTestCase(unittest.TestCase):
 
     def test_wifi_state_report(self):
         report = CheckWifiStateGrowcubeReport("1")
-        self.assertTrue(report._state)
+        self.assertFalse(report._state)
 
     def test_growcube_ip_report(self):
         report = GrowCubeIPGrowcubeReport("xyz")
@@ -83,7 +83,7 @@ class GrowCubeReportTestCase(unittest.TestCase):
     def test_unknown_report(self):
         report = UnknownGrowcubeReport("99", "1@2@3")
 
-        self.assertEqual("Unknown: 99", report._command)
+        self.assertEqual("Unknown response: 99", report._command)
         self.assertEqual("1, 2, 3", report.data)
 
 

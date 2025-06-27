@@ -54,7 +54,7 @@ class GrowcubeReport:
         if command in self.Response:
             self._command = self.Response[command]
         else:
-            self._command = f"Unknown: {command}"
+            self._command = f"Unknown response: {command}"
 
     @property
     def command(self) -> str:
@@ -650,7 +650,7 @@ class CheckSensorNotConnectedGrowcubeReport(GrowcubeReport):
 class CheckWifiStateGrowcubeReport(GrowcubeReport):
     """
     Response 31 - RepWifistate
-    Reports WiFi state, probably ony valid when in AP mode, to check if the new WiFi SSID is available
+    Reports WiFi state, probably only valid when in AP mode, to check if the new WiFi SSID is available
 
     :ivar _state: State
     :type _state: bool
@@ -663,7 +663,7 @@ class CheckWifiStateGrowcubeReport(GrowcubeReport):
         :type data: str
         """
         GrowcubeReport.__init__(self, 31)
-        self._state = data == "1"
+        self._state = data != "1"
 
     @property
     def state(self) -> bool:

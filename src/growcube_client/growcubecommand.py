@@ -1,7 +1,8 @@
 import datetime
+import time
 from typing import Optional
 
-from .growcubeenums import Channel, WateringMode
+from .growcubeenums import Channel, WateringMode, WorkMode
 
 """
 Growcube client library
@@ -116,7 +117,7 @@ class GrowcubeCommand:
         if self.command in self.Command:
             return self.Command[self.command]
         else:
-            return f"Unknown: {self.command}"
+            return f"Unknown command: {self.command}"
 
 
 class SetWorkModeCommand(GrowcubeCommand):
@@ -126,14 +127,14 @@ class SetWorkModeCommand(GrowcubeCommand):
     This command is used to set the work mode, and it is often sent as the first package from the phone app.
     """
 
-    def __init__(self, mode: int):
+    def __init__(self, mode: WorkMode):
         """
         SetWorkModeCommand constructor
 
         :param mode: The work mode.
         :type mode: int
         """
-        super().__init__(self.CMD_SET_WORK_MODE, str(mode))
+        super().__init__(self.CMD_SET_WORK_MODE, str(mode.value))
         self.mode = mode
 
     def get_description(self) -> str:
@@ -143,12 +144,12 @@ class SetWorkModeCommand(GrowcubeCommand):
         :return: A human-readable description of the command
         :rtype: str
         """
-        if self.mode == 0:
-            return "Auto"
-        elif self.mode == 1:
-            return "Manual"
+        if self.mode == WorkMode.Direct:
+            return "Direct"
+        elif self.mode == WorkMode.Network:
+            return "Network"
         else:
-            return f"Unknown: {self.mode}"
+            return f"Unknown work mode: {self.mode}"
 
 
 class SyncTimeCommand(GrowcubeCommand):
@@ -282,8 +283,29 @@ class WiFiSettingsCommand(GrowcubeCommand):
         :param password: Password
         :type password: str
         """
-        super().__init__(self.CMD_WIFI_SETTINGS, f"{ssid}@{password}")
+        self.ssid = ssid
+        self.password = password
+        super().__init__(self.CMD_WIFI_SETTINGS, None)
 
+    def get_message(self) -> str:
+        """
+        Get the complete message for sending to the Growcube device.
+
+        :return: The complete message.
+        :rtype: str
+        """
+        payload = f"{self.ssid}}}'{self.password}}}'{int(time.time())}"
+        # prefix with length and markers
+        return f"elea50]*{len(payload)}]*{payload}]*"
+
+    def get_description(self) -> str:
+        """
+        Get a human-readable description of the command
+
+        :return: A human-readable description of the command
+        :rtype: str
+        """
+        return f"{self.Command[self.command]}: SSID {self.ssid}, password {self.password} (timestamp)"
 
 class SyncWaterLevelCommand(GrowcubeCommand):
     """
