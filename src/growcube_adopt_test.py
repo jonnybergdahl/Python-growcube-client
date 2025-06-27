@@ -37,7 +37,7 @@ async def main(host: str) -> None:
 if __name__ == "__main__":
     # Set host name or IP address
     HOST = "192.168.1.125"
-    SSID = "BERGDAHL"
-    PASSWORD = "qwerty123456"
+    SSID = "SSID"
+    PASSWORD = "password"
 
     asyncio.run(main(HOST))
