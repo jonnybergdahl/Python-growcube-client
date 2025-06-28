@@ -11,7 +11,7 @@ with open(path.join(HERE, 'DESCRIPTION.md'), encoding='utf-8') as f:
 
 setup(
     name='growcube-client',
-    version='1.2.4',
+    version='1.2.5',
     description='A client for Elecrow GrowCube plant watering devices',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -21,9 +21,10 @@ setup(
     license='MIT',
     packages=find_packages(include=["growcube_client"], where='src'),
     package_dir={"": "src"},
-    setup_requires=['pytest-runner'],
+    setup_requires=['pytest-runner', 'setuptools>=61.0.0'],
     tests_require=['pytest==4.4.1'],
     test_suite='tests',
+    python_requires='>=3.9',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
