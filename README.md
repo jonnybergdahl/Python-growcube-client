@@ -78,18 +78,18 @@ Received: RepSTHSateCmd: pump: 3, moisture: 33, humidity: 41, temperature: 24
 
 ### Important device states
 
-Report class | Use
---- | ---
-WaterStateGrowcubeReport | Water warning
-MoistureHumidityStateGrowcubeReport | Moisture, humidity and temperature, reported per channel. _Note: Humidity and temperature is the same for all 4_
-DeviceVersionGrowcubeReport | Device id and firmware version
-PumpOpenGrowcubeReport | Pump outlet is open for channel
-PumpCloseGrowcubeReport | Pump outlet is closed for channel
-CheckSensorGrowcubeReport | Sensor not connected for channel
-CheckPumpBlockedGrowcubeReport | Pump outlet is blocked for channel
-CheckSensorNotConnectedGrowcubeReport | Sensor is not connected for channel
-LockStateGrowcubeReport | Device is in locked mode
-CheckOutletLockGrowcubeReport | Pump outlet is locked for channel
+| Report class                          | Use                                                                                                              |
+|---------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| WaterStateGrowcubeReport              | Water warning                                                                                                    |
+| MoistureHumidityStateGrowcubeReport   | Moisture, humidity and temperature, reported per channel. _Note: Humidity and temperature is the same for all 4_ |
+| DeviceVersionGrowcubeReport           | Device id and firmware version                                                                                   |
+| PumpOpenGrowcubeReport                | Pump outlet is open for channel                                                                                  |
+| PumpCloseGrowcubeReport               | Pump outlet is closed for channel                                                                                |
+| CheckSensorGrowcubeReport             | Sensor not connected for channel                                                                                 |
+| CheckPumpBlockedGrowcubeReport        | Pump outlet is blocked for channel                                                                               |
+| CheckSensorNotConnectedGrowcubeReport | Sensor is not connected for channel                                                                              |
+| LockStateGrowcubeReport               | Device is in locked mode                                                                                         |
+| CheckOutletLockGrowcubeReport         | Pump outlet is locked for channel                                                                                |
 
 ## More advanced use
 
@@ -116,7 +116,7 @@ The `src/growcube_adopt.py` file can be used to set WiFi credentials of a new or
 without the need for the Growcube phone app. 
 
   1. Make sure the Growcube flashes it's red and blue LED's. 
-  2. Connect to the Growcube_Xxxx WiFi
+  2. Connect to the Growcube_Xxxx WiFi, password is 88888888
   3. Run the `growcube_adopt.py` file
   4. Press the _Connect_ button and wait for connection
   5. Enter the WiFi credentials and press the _Save_ button
