@@ -364,12 +364,12 @@ class SimpleGUI(wx.Frame):
                 elif isinstance(command, WaterCommand):
                     await self.client.water_plant(command.channel, command.duration)
             if self.client.connected and time.time() - self.client.heartbeat > 10:
-                logging.debug("Heartbeat timeout");
-                self.client.disconnect();
+                logging.debug("Heartbeat timeout")
+                self.client.disconnect()
             await asyncio.sleep(1)
 
     def start_async_client_thread(self, host_name):
-        self.client = GrowcubeClient(host_name, self.update_data,
+        self.client = GrowcubeClient(host_name, self.on_message,
                                      on_connected_callback=self.on_connected,
                                      on_disconnected_callback=self.on_disconnected,
                                      log_level=DEBUG_LEVEL)
@@ -404,7 +404,7 @@ class SimpleGUI(wx.Frame):
     def on_disconnected(self, host):
         wx.CallAfter(self.update_status_bar, f"Disconnected from {host}")
 
-    def update_data(self, data):
+    def on_message(self, data):
         self.add_log_entry(f"< {data.get_description()}")
         if isinstance(data, DeviceVersionGrowcubeReport):
             self.version = data.version

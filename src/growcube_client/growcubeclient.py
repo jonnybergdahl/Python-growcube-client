@@ -26,8 +26,8 @@ class GrowcubeClient:
     :type host: str
     :ivar port: The port number for the connection. (Default: 8800)
     :type port: int
-    :ivar _callback: Callback function to receive data from the Growcube.
-    :type _callback: Callable[[GrowcubeReport], None]
+    :ivar _on_message_callback: Callback function to receive data from the Growcube.
+    :type _on_message_callback: Callable[[GrowcubeReport], None]
     :ivar _on_connected_callback: Callback function for when the connection is established.
     :type _on_connected_callback: Callable[[str], None] or None
     :ivar _on_disconnected_callback: Callback function for when the connection is lost.
@@ -51,7 +51,7 @@ class GrowcubeClient:
 
     def __init__(self,
                  host: str,
-                 callback: Callable[[GrowcubeReport], Awaitable[None]],
+                 on_message_callback: Callable[[GrowcubeReport], Awaitable[None]],
                  on_connected_callback: Callable[[str], Awaitable[None]] = None,
                  on_disconnected_callback: Callable[[str], Awaitable[None]] = None,
                  log_level: int = logging.INFO) -> None:
@@ -59,7 +59,7 @@ class GrowcubeClient:
         GrowcubeClient constructor
 
         :param host: Name or IP address of the Growcube device.
-        :param callback: Callback function to receive data from the Growcube.
+        :param on_message_callback: Callback function to receive data from the Growcube.
         :param on_connected_callback: Callback function for when the connection is established.
         :param on_disconnected_callback: Callback function for when the connection is lost.
         :param log_level: Logging level.
@@ -67,7 +67,7 @@ class GrowcubeClient:
         """
         self.host = host
         self.port = 8800
-        self._callback = callback
+        self._on_message_callback = on_message_callback
         self._on_connected_callback = on_connected_callback
         self._on_disconnected_callback = on_disconnected_callback
         self.log_level = log_level
@@ -101,11 +101,11 @@ class GrowcubeClient:
         report = GrowcubeReport.get_report(message)
         logging.debug(f"< {report.get_description()}")
         self.heartbeat = datetime.datetime.now().timestamp()
-        if self._callback:
-            if inspect.iscoroutinefunction(self._callback):
-                asyncio.create_task(self._callback(report))
+        if self._on_message_callback:
+            if inspect.iscoroutinefunction(self._on_message_callback):
+                asyncio.create_task(self._on_message_callback(report))
             else:
-                self._callback(report)
+                self._on_message_callback(report)
 
     def on_connection_lost(self) -> None:
         """

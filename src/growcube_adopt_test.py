@@ -5,8 +5,8 @@ from growcube_client import GrowcubeReport, GrowcubeClient, SetWorkModeCommand, 
 from growcube_client.growcubeenums import WorkMode
 
 
-# Define a callback function to print messages to the screen
-def callback(report: GrowcubeReport) -> None:
+# Define a on_message_callback function to print messages to the screen
+def on_message(report: GrowcubeReport) -> None:
     # Just dump the message to the console
     print(f"Received: {report.get_description()}")
 
@@ -23,7 +23,7 @@ async def main(host: str) -> None:
     logging.basicConfig(level=logging.DEBUG)
 
     # Create a client instance
-    client = GrowcubeClient(host, callback)
+    client = GrowcubeClient(host, on_message, on_connected, on_disconnected)
     print(f"Connecting to Growcube at {HOST}")
 
     # Connect to the Growcube and start listening for messages
