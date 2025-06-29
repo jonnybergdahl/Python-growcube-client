@@ -1,0 +1,2 @@
+python -m nuitka --lto=yes --onefile --windows-console-mode=disable --output-dir=dist/windows .\src\growcube_adopt.py
+python -m nuitka --lto=yes --onefile --windows-console-mode=disable --output-dir=dist/windows .\src\growcube_app.py
