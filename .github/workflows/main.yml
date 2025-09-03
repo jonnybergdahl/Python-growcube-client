@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  # Runs on pushes
+  push:
+    paths-ignore:
+      - '**.md'
+  # Runs on pull request
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # Test on these OS
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Test for these python versions
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.10"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Run Unit Tests
+      run: |
+        cd ./src
+        python -m unittest discover ./tests
