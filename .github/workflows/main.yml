@@ -1,12 +1,12 @@
 name: CI
 
 on:
-  # Runs on pushes and PRs to main
+  # Runs on pushes
   push:
     paths-ignore:
       - '**.md'
+  # Runs on pull request
   pull_request:
-    branches: [ "main" ]
     paths-ignore:
       - '**.md'
   # Allows you to run this workflow manually from the Actions tab
@@ -17,7 +17,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        # Test on these OS
         os: [ubuntu-latest, macos-latest, windows-latest]
+        # Test for these python versions
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.10"]
     steps:
     - uses: actions/checkout@v4
