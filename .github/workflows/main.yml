@@ -24,4 +24,5 @@ jobs:
         python-version: '3.13'
     - name: Run Unit Tests
       run: |
-        python -m unittest discover src/tests
+        cd ./src
+        python -m unittest discover ./tests
