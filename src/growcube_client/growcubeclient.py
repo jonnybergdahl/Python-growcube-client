@@ -2,6 +2,9 @@ import asyncio
 import datetime, time
 import inspect
 import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 from typing import Callable, Tuple, Awaitable
 from .growcubeenums import Channel
 from .growcubemessage import GrowcubeMessage
@@ -30,10 +33,8 @@ class GrowcubeClient:
     :type _on_message_callback: Callable[[GrowcubeReport], None]
     :ivar _on_connected_callback: Callback function for when the connection is established.
     :type _on_connected_callback: Callable[[str], None] or None
-    :ivar _on_disconnected_callback: Callback function for when the connection is lost.
+    :ivar _disconnected_callback: Callback function for when the connection is lost.
     :type _on_disconnected_callback: Callable[[str], None] or None
-    :ivar log_level: Logging level. (Default: logging.INFO)
-    :type log_level: int
     :ivar _exit: Internal flag indicating if the client is exiting.
     :type _exit: bool
     :ivar _data: Buffer to accumulate received data.
@@ -53,8 +54,7 @@ class GrowcubeClient:
                  host: str,
                  on_message_callback: Callable[[GrowcubeReport], Awaitable[None]],
                  on_connected_callback: Callable[[str], Awaitable[None]] = None,
-                 on_disconnected_callback: Callable[[str], Awaitable[None]] = None,
-                 log_level: int = logging.INFO) -> None:
+                 on_disconnected_callback: Callable[[str], Awaitable[None]] = None) -> None:
         """
         GrowcubeClient constructor
 
@@ -62,15 +62,12 @@ class GrowcubeClient:
         :param on_message_callback: Callback function to receive data from the Growcube.
         :param on_connected_callback: Callback function for when the connection is established.
         :param on_disconnected_callback: Callback function for when the connection is lost.
-        :param log_level: Logging level.
-        :type log_level: int
         """
         self.host = host
         self.port = 8800
         self._on_message_callback = on_message_callback
         self._on_connected_callback = on_connected_callback
         self._on_disconnected_callback = on_disconnected_callback
-        self.log_level = log_level
         self._exit = False
         self._data = b''
         self.transport = None
@@ -84,7 +81,7 @@ class GrowcubeClient:
         Callback function for when the connection is established
         """
         self.connected = True
-        logging.debug(f"Connected to {self.host}")
+        _LOGGER.debug(f"Connected to {self.host}")
         if self._on_connected_callback:
             if inspect.iscoroutinefunction(self._on_connected_callback):
                 asyncio.create_task(self._on_connected_callback(self.host))
@@ -99,7 +96,7 @@ class GrowcubeClient:
         :type message: GrowcubeMessage
         """
         report = GrowcubeReport.get_report(message)
-        logging.debug(f"< {report.get_description()}")
+        _LOGGER.debug(f"< {report.get_description()}")
         self.heartbeat = datetime.datetime.now().timestamp()
         if self._on_message_callback:
             if inspect.iscoroutinefunction(self._on_message_callback):
@@ -114,7 +111,7 @@ class GrowcubeClient:
         :return: None
         :rtype: None
         """
-        logging.debug(f"Connection to {self.host} lost")
+        _LOGGER.debug(f"Connection to {self.host} lost")
         self.connected = False
         if self._on_disconnected_callback:
             if inspect.iscoroutinefunction(self._on_disconnected_callback):
@@ -132,7 +129,7 @@ class GrowcubeClient:
         """
         error_message = ""
         try:
-            logging.debug("Connecting to %s:%i", self.host, self.port)
+            _LOGGER.debug("Connecting to %s:%i", self.host, self.port)
             loop = asyncio.get_event_loop()
             connection_coroutine = loop.create_connection(lambda: GrowcubeProtocol(self.on_connected,
                                                                                    self.on_message,
@@ -141,24 +138,24 @@ class GrowcubeClient:
                                                           self.port)
             self.transport, self.protocol = await asyncio.wait_for(connection_coroutine,
                                                                    timeout=self.connection_timeout)
-            logging.debug("Connected to %s:%i", self.host, self.port)
+            _LOGGER.debug("Connected to %s:%i", self.host, self.port)
             # await asyncio.create_task(self.send_keep_alive(interval=10))
             return True, ""
         except ConnectionRefusedError:
             error_message = f"Connection to {self.host}:{self.port} refused"
-            logging.error(error_message)
+            _LOGGER.error(error_message)
         except asyncio.CancelledError:
             error_message = "Client was cancelled"
-            logging.error(error_message)
+            _LOGGER.error(error_message)
         except asyncio.IncompleteReadError:
             error_message = "Connection closed by server"
-            logging.error(error_message)
+            _LOGGER.error(error_message)
         except asyncio.TimeoutError:
             error_message = f"Connection to {self.host} timed out"
-            logging.error(error_message)
+            _LOGGER.error(error_message)
         except Exception as e:
             error_message = f"Error {str(e)}"
-            logging.error(error_message)
+            _LOGGER.error(error_message)
         return False, error_message
 
     def disconnect(self) -> None:
@@ -167,7 +164,7 @@ class GrowcubeClient:
 
         :return: None
         """
-        logging.info("Disconnecting")
+        _LOGGER.info("Disconnecting")
         if self.transport:
             self.transport.close()
         self.connected = False
@@ -182,14 +179,14 @@ class GrowcubeClient:
         :rtype: bool
         """
         try:
-            logging.info("> %s", command.get_description())
+            _LOGGER.info("> %s", command.get_description())
             message_bytes = command.get_message().encode('ascii')
             self.protocol.send_message(message_bytes)
         except OSError as e:
-            logging.error(f"send_command OSError {str(e)}")
+            _LOGGER.error(f"send_command OSError {str(e)}")
             return False
         except Exception as e:
-            logging.error(f"send_command Exception {str(e)}")
+            _LOGGER.error(f"send_command Exception {str(e)}")
             return False
         return True
 

@@ -1,6 +1,9 @@
 import asyncio
 import ipaddress
 import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 import socket
 
 """
@@ -19,22 +22,16 @@ class GrowcubeDiscovery:
     :cvar PORT: The default port for Growcube device discovery.
     :vartype PORT: int
 
-    :ivar log_level: The logging level.
-    :type log_level: int
     :ivar _devices: A list to store discovered devices.
     :type _devices: list[str]
     """
 
     PORT = 8800
 
-    def __init__(self, log_level: int = logging.INFO) -> None:
+    def __init__(self) -> None:
         """
         GrowcubeDiscovery constructor
-
-        :param log_level: The logging level. (Default: logging.INFO)
-        :type log_level: int
         """
-        self.log_level = log_level
         self._devices = []
 
     async def discover_device(self, ip_address: str) -> bool:
@@ -48,9 +45,9 @@ class GrowcubeDiscovery:
         """
         try:
             # Attempt to connect to port self.PORT with a timeout of 5 seconds
-            print(f"Trying to connect to {ip_address}")
+            # print(f"Trying to connect to {ip_address}")
             _, writer = await asyncio.wait_for(asyncio.open_connection(ip_address, self.PORT), timeout=5)
-            logging.debug(f"Device discovered at {ip_address}:{self.PORT}")
+            _LOGGER.debug(f"Device discovered at {ip_address}:{self.PORT}")
             writer.close()
             await writer.wait_closed()
             self._devices.append(ip_address)
@@ -76,7 +73,7 @@ class GrowcubeDiscovery:
         local_subnet = subnet
         self._devices = []
         if local_subnet:
-            logging.debug(f"Scanning devices in local subnet: {local_subnet}")
+            _LOGGER.debug(f"Scanning devices in local subnet: {local_subnet}")
 
             # Run the tasks concurrently
             # Set the maximum number of concurrent tasks
@@ -92,7 +89,7 @@ class GrowcubeDiscovery:
             await asyncio.gather(*tasks)
             return self._devices
         else:
-            logging.error("Failed to determine the local subnet. Make sure you are connected to a network.")
+            _LOGGER.error("Failed to determine the local subnet. Make sure you are connected to a network.")
 
     @staticmethod
     def guess_subnet() -> ipaddress.IPv4Network:
@@ -111,5 +108,5 @@ class GrowcubeDiscovery:
         # Make network mask
         split = local_ip.split(".")
         subnet = f"{split[0]}.{split[1]}.{split[2]}.0/24"
-        logging.debug(f"Guessed local subnet: {subnet}")
+        _LOGGER.debug(f"Guessed local subnet: {subnet}")
         return ipaddress.IPv4Network(subnet, strict=False)

@@ -96,8 +96,7 @@ class AdoptFrame(wx.Frame):
         self.client = GrowcubeClient(host_name, 
                                      on_message_callback=self._on_message,
                                      on_connected_callback=self._on_connected,
-                                     on_disconnected_callback=self._on_disconnected,
-                                     log_level=DEBUG_LEVEL)
+                                     on_disconnected_callback=self._on_disconnected)
         self.exit_background_thread = False
 
         # Create a new event loop for the background thread

@@ -1,5 +1,8 @@
 import asyncio
 import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 from typing import (
     Callable,
 )
@@ -72,7 +75,7 @@ class GrowcubeProtocol(asyncio.Protocol):
         :type transport: asyncio.Transport
         """
         self.transport = transport
-        logging.info("Connection established.")
+        _LOGGER.info("Connection established.")
         if self._on_connected:
             self._on_connected()
         self._reset_timeout()
@@ -94,7 +97,7 @@ class GrowcubeProtocol(asyncio.Protocol):
         self._data = self._data[new_index:]
 
         if message is not None:
-            logging.debug(f"message: {message.command} - {message.payload}")
+            _LOGGER.debug(f"message: {message.command} - {message.payload}")
             if self._on_message:
                 self._on_message(message)
 
@@ -115,7 +118,7 @@ class GrowcubeProtocol(asyncio.Protocol):
         :param exc: An exception indicating the reason for the connection loss.
         :type exc: Exception
         """
-        logging.debug(f"Connection lost, reason: {exc}")
+        _LOGGER.debug(f"Connection lost, reason: {exc}")
         if self._timeout_handle:
             self._timeout_handle.cancel()
         if self._on_connection_lost:
@@ -130,5 +133,5 @@ class GrowcubeProtocol(asyncio.Protocol):
         self._timeout_handle = self._loop.call_later(self._timeout, self._check_timeout)
 
     def _check_timeout(self) -> None:
-        logging.debug("Connection timed out.")
+        _LOGGER.debug("Connection timed out.")
         self.transport.abort()

@@ -49,7 +49,7 @@ async def main() -> None:
     else:
         subnet = None # guess_subnet()
 
-    discovery = GrowcubeDiscovery(log_level=logging.DEBUG)
+    discovery = GrowcubeDiscovery()
     print(f"Discovering Growcube clients on subnet {subnet}")
     devices = await discovery.discover_devices_in_local_subnet(subnet)
     print(f"Found {len(devices)} devices:")

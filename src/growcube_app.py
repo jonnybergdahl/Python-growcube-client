@@ -7,6 +7,9 @@ import wx
 import threading
 import asyncio
 import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 from growcube_client import GrowcubeClient, Channel, GrowcubeCommand, PumpOpenGrowcubeReport, PumpCloseGrowcubeReport, \
     SyncWaterLevelCommand, SyncWaterTimeCommand, SetWorkModeCommand
 from growcube_client import (DeviceVersionGrowcubeReport, LockStateGrowcubeReport, CheckSensorGrowcubeReport, \
@@ -364,15 +367,14 @@ class SimpleGUI(wx.Frame):
                 elif isinstance(command, WaterCommand):
                     await self.client.water_plant(command.channel, command.duration)
             if self.client.connected and time.time() - self.client.heartbeat > 10:
-                logging.debug("Heartbeat timeout")
+                _LOGGER.debug("Heartbeat timeout")
                 self.client.disconnect()
             await asyncio.sleep(1)
 
     def start_async_client_thread(self, host_name):
         self.client = GrowcubeClient(host_name, self.on_message,
                                      on_connected_callback=self.on_connected,
-                                     on_disconnected_callback=self.on_disconnected,
-                                     log_level=DEBUG_LEVEL)
+                                     on_disconnected_callback=self.on_disconnected)
         self.exit_background_thread = False
         if self.background_thread_loop is None:
             self.background_thread_loop = asyncio.new_event_loop()
