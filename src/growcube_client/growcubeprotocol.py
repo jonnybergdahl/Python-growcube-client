@@ -92,11 +92,21 @@ class GrowcubeProtocol(asyncio.Protocol):
         data = bytearray(filter(lambda c: c != 0, data))
         # add the data to the message buffer
         self._data += data
-        # check for complete message
-        new_index, message = GrowcubeMessage.from_bytes(self._data)
-        self._data = self._data[new_index:]
 
-        if message is not None:
+        while True:
+            # Check for a complete message
+            new_index, message = GrowcubeMessage.from_bytes(self._data)
+
+            # Discard any junk before the next header (new_index can be > 0 even with no message)
+            if new_index > 0 and message is None:
+                self._data = self._data[new_index:]
+
+            if message is None:
+                break;
+
+            # Consume this message
+            self._data = self._data[new_index:]
+
             _LOGGER.debug(f"message: {message.command} - {message.payload}")
             if self._on_message:
                 self._on_message(message)

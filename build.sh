@@ -17,7 +17,7 @@ cp -r assets/ ~/Developer/jonnybergdahl/jonnybergdahl.github.io/growcube-client/
 touch ~/Developer/jonnybergdahl/jonnybergdahl.github.io/growcube-client/.nojekyll
 
 # Commit and push docs
-pushd ~/Developer/jonnybergdahl/jonnybergdahl.github.io
+pushd ~/Developer/jonnybergdahl/jonnybergdahl.github.io || exit
 git checkout main
 git pull
 git add growcube-client
@@ -27,7 +27,7 @@ if [ -n "$(git status --porcelain)" ]; then
 else
    echo "Branch main is up to date,nothing to do."
 fi
-popd
+popd || exit
 
 # Make new version
 rm -rf dist
