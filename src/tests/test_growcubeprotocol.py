@@ -31,16 +31,15 @@ class GrowcubeProtocolTestCase(unittest.TestCase):
 
     @patch('growcube_client.GrowcubeMessage.from_bytes')
     def test_data_received_complete_message(self, mock_from_bytes):
-        # Mock a complete message
+        # Mock a complete message, then an empty buffer
         mock_message = MagicMock()
-        mock_from_bytes.return_value = (10, mock_message)  # 10 bytes consumed, message returned
+        mock_from_bytes.side_effect = [(10, mock_message), (0, None)]
         
         # Reset the timeout handle mock
         with patch.object(self.protocol, '_reset_timeout') as mock_reset_timeout:
             self.protocol.data_received(b'elea28#1#0#')
             
             mock_reset_timeout.assert_called_once()
-            mock_from_bytes.assert_called_once()
             self.on_message.assert_called_once_with(mock_message)
 
     @patch('growcube_client.GrowcubeMessage.from_bytes')
@@ -58,9 +57,9 @@ class GrowcubeProtocolTestCase(unittest.TestCase):
 
     @patch('growcube_client.GrowcubeMessage.from_bytes')
     def test_data_received_with_null_bytes(self, mock_from_bytes):
-        # Mock a message with null bytes
+        # Mock a message with null bytes, then an empty buffer
         mock_message = MagicMock()
-        mock_from_bytes.return_value = (10, mock_message)  # 10 bytes consumed, message returned
+        mock_from_bytes.side_effect = [(10, mock_message), (0, None)]
         
         # Reset the timeout handle mock
         with patch.object(self.protocol, '_reset_timeout') as mock_reset_timeout:
@@ -68,8 +67,7 @@ class GrowcubeProtocolTestCase(unittest.TestCase):
             
             mock_reset_timeout.assert_called_once()
             # Check that null bytes were filtered out
-            mock_from_bytes.assert_called_once()
-            self.assertEqual(b'elea28#1#0#', mock_from_bytes.call_args[0][0])
+            self.assertEqual(b'elea28#1#0#', mock_from_bytes.call_args_list[0][0][0])
             self.on_message.assert_called_once_with(mock_message)
 
     def test_send_message(self):
@@ -113,6 +111,42 @@ class GrowcubeProtocolTestCase(unittest.TestCase):
         
         # Check that the transport was aborted
         self.transport.abort.assert_called_once()
+
+    def test_check_timeout_without_transport(self):
+        # The watchdog can fire after the transport is gone
+        self.protocol.transport = None
+        
+        self.protocol._check_timeout()
+
+    def test_data_received_recovers_from_malformed_message(self):
+        """Garbage on the wire must not wedge the connection.
+
+        The bad bytes have to be dropped from the buffer, otherwise every
+        later read re-parses them, raises again, and no message ever gets
+        through - while the inactivity watchdog keeps being reset, so the
+        connection is never torn down either.
+        """
+        with patch.object(self.protocol, '_reset_timeout'):
+            # 'abc' is not a valid payload length
+            self.protocol.data_received(b'elea24#abc#hello#')
+            
+            self.on_message.assert_not_called()
+            
+            # A well formed message after the garbage still gets delivered
+            self.protocol.data_received(GrowcubeMessage.to_bytes(24, '3.6@12345678'))
+            
+            self.on_message.assert_called_once()
+            self.assertEqual(24, self.on_message.call_args[0][0].command)
+
+    @patch('growcube_client.GrowcubeMessage.from_bytes')
+    def test_data_received_stops_when_parser_makes_no_progress(self, mock_from_bytes):
+        """A message that consumes no bytes must not loop forever."""
+        mock_from_bytes.return_value = (0, MagicMock())
+        
+        with patch.object(self.protocol, '_reset_timeout'):
+            self.protocol.data_received(b'elea28#1#0#')
+            
+            self.on_message.assert_not_called()
 
 
 if __name__ == '__main__':
