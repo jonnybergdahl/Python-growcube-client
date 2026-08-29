@@ -1,20 +1,22 @@
 import unittest
 import asyncio
 import ipaddress
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 from growcube_client import GrowcubeDiscovery
 
 
-class GrowcubeDiscoveryTestCase(unittest.TestCase):
+class GrowcubeDiscoveryTestCase(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.discovery = GrowcubeDiscovery()
 
-    @patch('asyncio.open_connection')
-    @patch('asyncio.wait_for')
+    @patch('asyncio.open_connection', new_callable=AsyncMock)
+    @patch('asyncio.wait_for', new_callable=AsyncMock)
     async def test_discover_device_success(self, mock_wait_for, mock_open_connection):
         # Mock a successful connection
         mock_reader = MagicMock()
         mock_writer = MagicMock()
+        mock_writer.close = MagicMock()
+        mock_writer.wait_closed = AsyncMock()
         mock_wait_for.return_value = (mock_reader, mock_writer)
         
         result = await self.discovery.discover_device("192.168.1.100")
@@ -25,8 +27,8 @@ class GrowcubeDiscoveryTestCase(unittest.TestCase):
         mock_writer.close.assert_called_once()
         mock_writer.wait_closed.assert_called_once()
 
-    @patch('asyncio.open_connection')
-    @patch('asyncio.wait_for')
+    @patch('asyncio.open_connection', new_callable=AsyncMock)
+    @patch('asyncio.wait_for', new_callable=AsyncMock)
     async def test_discover_device_timeout(self, mock_wait_for, mock_open_connection):
         # Mock a connection timeout
         mock_wait_for.side_effect = asyncio.TimeoutError()
@@ -36,8 +38,8 @@ class GrowcubeDiscoveryTestCase(unittest.TestCase):
         self.assertFalse(result)
         self.assertNotIn("192.168.1.100", self.discovery._devices)
 
-    @patch('asyncio.open_connection')
-    @patch('asyncio.wait_for')
+    @patch('asyncio.open_connection', new_callable=AsyncMock)
+    @patch('asyncio.wait_for', new_callable=AsyncMock)
     async def test_discover_device_connection_refused(self, mock_wait_for, mock_open_connection):
         # Mock a connection refused error
         mock_wait_for.side_effect = ConnectionRefusedError()
@@ -47,8 +49,8 @@ class GrowcubeDiscoveryTestCase(unittest.TestCase):
         self.assertFalse(result)
         self.assertNotIn("192.168.1.100", self.discovery._devices)
 
-    @patch('asyncio.open_connection')
-    @patch('asyncio.wait_for')
+    @patch('asyncio.open_connection', new_callable=AsyncMock)
+    @patch('asyncio.wait_for', new_callable=AsyncMock)
     async def test_discover_device_other_exception(self, mock_wait_for, mock_open_connection):
         # Mock another exception
         mock_wait_for.side_effect = Exception("Test exception")
@@ -58,26 +60,31 @@ class GrowcubeDiscoveryTestCase(unittest.TestCase):
         self.assertFalse(result)
         self.assertNotIn("192.168.1.100", self.discovery._devices)
 
-    @patch.object(GrowcubeDiscovery, 'discover_device')
+    @patch.object(GrowcubeDiscovery, 'discover_device', new_callable=AsyncMock)
     async def test_discover_devices_in_local_subnet(self, mock_discover_device):
+        # Create a small subnet for testing
+        subnet = ipaddress.IPv4Network("192.168.1.0/29")  # 192.168.1.1 - 192.168.1.6
+        
         # Mock the discover_device method to return True for some IPs
         async def mock_discover(ip):
-            if ip == "192.168.1.100" or ip == "192.168.1.200":
+            if ip == "192.168.1.2" or ip == "192.168.1.5":
                 self.discovery._devices.append(ip)
                 return True
             return False
         
         mock_discover_device.side_effect = mock_discover
         
-        # Create a small subnet for testing
-        subnet = ipaddress.IPv4Network("192.168.1.0/29")  # 192.168.1.1 - 192.168.1.6
-        
+        # In this test, we are mocking discover_device, which is what 
+        # discover_devices_in_local_subnet calls.
         devices = await self.discovery.discover_devices_in_local_subnet(subnet)
         
         # Check that discover_device was called for each host in the subnet
         self.assertEqual(6, mock_discover_device.call_count)  # 6 usable IPs in a /29
         # Check that the discovered devices were returned
-        self.assertEqual(["192.168.1.100", "192.168.1.200"], devices)
+        self.assertEqual(2, len(self.discovery._devices))
+        self.assertIn("192.168.1.2", self.discovery._devices)
+        self.assertIn("192.168.1.5", self.discovery._devices)
+        self.assertEqual(devices, self.discovery._devices)
 
     @patch('socket.socket')
     def test_guess_subnet(self, mock_socket):

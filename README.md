@@ -50,8 +50,14 @@ async def main(host: str) -> None:
     client = GrowcubeClient(host, callback)
     print(f"Connecting to Growcube at {HOST}")
 
-    # Connect to the Growcube and start listening for messages
-    await client.connect()
+    # Connect to the Growcube and start listening for messages. This waits for
+    # the device to identify itself, so success means a Growcube really did
+    # answer. On failure the connection is already closed.
+    connected, error = await client.connect()
+    if not connected:
+        print(f"Failed to connect: {error}")
+        return
+    print(f"Connected to device {client.device_id}, firmware {client.version}")
 
     while True:
         await asyncio.sleep(2)

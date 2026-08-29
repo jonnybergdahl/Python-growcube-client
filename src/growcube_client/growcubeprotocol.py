@@ -63,7 +63,12 @@ class GrowcubeProtocol(asyncio.Protocol):
         self._on_connected = on_connected
         self._on_message = on_message
         self._on_connection_lost = on_connection_lost
-        self._loop = asyncio.get_event_loop()
+        # Resolved lazily in _reset_timeout(), which only ever runs inside the
+        # loop. Grabbing it here would tie construction to a current loop
+        # existing at that moment, which is not guaranteed and is on its way
+        # out: asyncio.get_event_loop() raises outside a running loop from
+        # Python 3.14 on.
+        self._loop = None
         self._timeout_handle = None
         self._timeout = 30
 
@@ -93,16 +98,32 @@ class GrowcubeProtocol(asyncio.Protocol):
         # add the data to the message buffer
         self._data += data
 
-        while True:
+        while self._data:
             # Check for a complete message
-            new_index, message = GrowcubeMessage.from_bytes(self._data)
+            try:
+                new_index, message = GrowcubeMessage.from_bytes(self._data)
+            except ValueError as exception:
+                # A malformed message would fail to parse again on every later
+                # call, so the buffer has to be resynchronized here. Leaving it
+                # in place wedges the connection for good: the read below keeps
+                # feeding the same bytes back in, and the inactivity watchdog
+                # never fires because it was just reset above.
+                _LOGGER.warning("Discarding malformed message: %s", exception)
+                self._resync()
+                continue
 
             # Discard any junk before the next header (new_index can be > 0 even with no message)
             if new_index > 0 and message is None:
                 self._data = self._data[new_index:]
 
             if message is None:
-                break;
+                break
+
+            if new_index <= 0:
+                # A message that consumes nothing would loop forever.
+                _LOGGER.error("Parser made no progress, discarding buffer")
+                self._data = bytearray()
+                break
 
             # Consume this message
             self._data = self._data[new_index:]
@@ -110,6 +131,19 @@ class GrowcubeProtocol(asyncio.Protocol):
             _LOGGER.debug(f"message: {message.command} - {message.payload}")
             if self._on_message:
                 self._on_message(message)
+
+    def _resync(self) -> None:
+        """
+        Drops data up to and including the current message header, so the next
+        parse attempt starts at the following header instead of re-reading the
+        bytes that just failed.
+        """
+        header = GrowcubeMessage.HEADER.encode("ascii")
+        start_index = self._data.find(header)
+        if start_index == -1:
+            self._data = bytearray()
+        else:
+            self._data = self._data[start_index + len(header):]
 
     def send_message(self, message: bytes) -> None:
         """
@@ -138,10 +172,13 @@ class GrowcubeProtocol(asyncio.Protocol):
         """
         Resets the timeout
         """
+        if self._loop is None:
+            self._loop = asyncio.get_event_loop()
         if self._timeout_handle:
             self._timeout_handle.cancel()
         self._timeout_handle = self._loop.call_later(self._timeout, self._check_timeout)
 
     def _check_timeout(self) -> None:
         _LOGGER.debug("Connection timed out.")
-        self.transport.abort()
+        if self.transport:
+            self.transport.abort()
